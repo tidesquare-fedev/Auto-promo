@@ -1,0 +1,204 @@
+@import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+    --primary: 221.2 83.2% 53.3%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 221.2 83.2% 53.3%;
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 217.2 91.2% 59.8%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 224.3 76.3% 48%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: "Pretendard", -apple-system, BlinkMacSystemFont, system-ui, Roboto, "Helvetica Neue", "Segoe UI", "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", sans-serif;
+  }
+}
+
+/* GNB와 Bottom Tab Bar를 위한 body 패딩 - 마케팅 페이지에만 적용 */
+@media (min-width: 768px) {
+  body.marketing-page {
+    padding-top: 64px; /* GNB 높이 (h-16 = 64px) */
+  }
+}
+
+@media (max-width: 767px) {
+  body.marketing-page {
+    padding-bottom: 64px; /* Bottom Tab Bar 높이 (h-16 = 64px) */
+  }
+}
+
+/* IntroText 리치 텍스트 스타일 */
+.intro-text-content ul,
+.intro-text-content ol {
+  margin: 0.25rem 0 !important;
+  padding-left: 1.5rem !important;
+  list-style-position: outside !important;
+}
+
+.intro-text-content ul {
+  list-style-type: disc !important;
+}
+
+.intro-text-content ol {
+  list-style-type: decimal !important;
+}
+
+.intro-text-content li {
+  margin: 0.125rem 0 !important;
+  padding: 0 !important;
+}
+
+.intro-text-content p {
+  margin: 0.25rem 0 !important;
+}
+
+/* Quill 에디터 정렬 스타일 - 일반 텍스트(p 태그) */
+.intro-text-content p.ql-align-center {
+  text-align: center !important;
+}
+
+.intro-text-content p.ql-align-right {
+  text-align: right !important;
+}
+
+.intro-text-content p.ql-align-left {
+  text-align: left !important;
+}
+
+.intro-text-content p.ql-align-justify {
+  text-align: justify !important;
+}
+
+/* 리스트 전체에 정렬 클래스가 붙은 경우 */
+.intro-text-content ol.ql-align-center,
+.intro-text-content ul.ql-align-center {
+  padding-left: 0 !important;
+  list-style-position: inside !important;
+  text-align: center !important;
+}
+
+.intro-text-content ol.ql-align-right,
+.intro-text-content ul.ql-align-right {
+  padding-left: 0 !important;
+  list-style-position: inside !important;
+  text-align: right !important;
+}
+
+.intro-text-content ol.ql-align-left,
+.intro-text-content ul.ql-align-left {
+  text-align: left !important;
+}
+
+/* 리스트 아이템에 정렬 클래스가 붙은 경우 */
+.intro-text-content li.ql-align-center {
+  list-style-position: inside !important;
+  text-align: center !important;
+}
+
+.intro-text-content li.ql-align-right {
+  list-style-position: inside !important;
+  text-align: right !important;
+}
+
+.intro-text-content li.ql-align-left {
+  text-align: left !important;
+}
+
+.intro-text-content h1 {
+  font-size: 2em !important;
+  font-weight: bold !important;
+  margin: 1rem 0 0.5rem 0 !important;
+}
+
+.intro-text-content h2 {
+  font-size: 1.5em !important;
+  font-weight: bold !important;
+  margin: 1rem 0 0.5rem 0 !important;
+}
+
+.intro-text-content h3 {
+  font-size: 1.25em !important;
+  font-weight: bold !important;
+  margin: 1rem 0 0.5rem 0 !important;
+}
+
+.intro-text-content strong {
+  font-weight: bold !important;
+}
+
+.intro-text-content em {
+  font-style: italic !important;
+}
+
+.intro-text-content u {
+  text-decoration: underline !important;
+}
+
+.intro-text-content s {
+  text-decoration: line-through !important;
+}
+
+.intro-text-content a {
+  color: #2563eb !important;
+  text-decoration: underline !important;
+}
+
+.intro-text-content a:hover {
+  color: #1d4ed8 !important;
+}
+
+.intro-text-content > *:first-child {
+  margin-top: 0 !important;
+}
+
+.intro-text-content > *:last-child {
+  margin-bottom: 0 !important;
+}
+

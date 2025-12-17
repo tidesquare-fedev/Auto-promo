@@ -1,0 +1,6 @@
+export { HeroSection } from "./HeroSection"
+export { IntroText } from "./IntroText"
+export { ProductGrid } from "./ProductGrid"
+export { ProductTabs } from "./ProductTabs"
+export { ImageCarousel } from "./ImageCarousel"
+export { FAQSection } from "./FAQSection"

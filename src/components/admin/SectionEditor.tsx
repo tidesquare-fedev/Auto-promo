@@ -2,8 +2,15 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
+import { PageSection } from "@/types/page"
 
-export function SectionEditor({ section, onChange, onRemove }) {
+interface SectionEditorProps {
+  section: PageSection
+  onChange: (section: PageSection) => void
+  onRemove: () => void
+}
+
+export function SectionEditor({ section, onChange, onRemove }: SectionEditorProps) {
   return (
     <Card>
       <CardContent className="space-y-3 pt-6">
@@ -18,14 +25,14 @@ export function SectionEditor({ section, onChange, onRemove }) {
           <>
             <Input
               placeholder="타이틀"
-              value={section.title}
+              value={section.title || ""}
               onChange={e =>
                 onChange({ ...section, title: e.target.value })
               }
             />
             <Input
               placeholder="서브 타이틀"
-              value={section.subtitle}
+              value={section.subtitle || ""}
               onChange={e =>
                 onChange({ ...section, subtitle: e.target.value })
               }
@@ -37,14 +44,14 @@ export function SectionEditor({ section, onChange, onRemove }) {
           <>
             <Input
               placeholder="제목"
-              value={section.title}
+              value={section.title || ""}
               onChange={e =>
                 onChange({ ...section, title: e.target.value })
               }
             />
             <Textarea
               placeholder="설명"
-              value={section.description}
+              value={section.description || ""}
               onChange={e =>
                 onChange({ ...section, description: e.target.value })
               }
@@ -56,14 +63,14 @@ export function SectionEditor({ section, onChange, onRemove }) {
           <>
             <Input
               placeholder="섹션 타이틀"
-              value={section.title}
+              value={section.title || ""}
               onChange={e =>
                 onChange({ ...section, title: e.target.value })
               }
             />
             <Textarea
               placeholder="상품 ID (콤마로 구분)"
-              defaultValue={section.productIds.join(", ")}
+              defaultValue={(section.productIds || []).join(", ")}
               onBlur={e =>
                 onChange({
                   ...section,
@@ -80,15 +87,15 @@ export function SectionEditor({ section, onChange, onRemove }) {
         {section.type === "FAQ" && (
           <Textarea
             placeholder="Q:A 형태로 입력 (한 줄씩)"
-            value={section.items
-              .map(i => `${i.q}:${i.a}`)
+            value={(section.items || [])
+              .map(i => `${i.q || ""}:${i.a || ""}`)
               .join("\n")}
             onChange={e =>
               onChange({
                 ...section,
                 items: e.target.value.split("\n").map(line => {
                   const [q, a] = line.split(":")
-                  return { q, a }
+                  return { q: q || "", a: a || "" }
                 })
               })
             }

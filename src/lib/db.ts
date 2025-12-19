@@ -1,4 +1,5 @@
 import { CityDirectPage } from "@/types/page"
+import * as supabaseModule from "./supabase"
 
 /**
  * 데이터베이스 추상화 레이어
@@ -11,56 +12,49 @@ const useSupabase = !!(
   process.env.SUPABASE_SERVICE_ROLE_KEY
 )
 
-// 동적 import로 Supabase 로드
-let supabaseStore: any = null
+// Static import로 Supabase 로드
+const supabaseStore = supabaseModule
 let supabaseAvailable = false
 
 if (useSupabase) {
-  try {
-    supabaseStore = require("./supabase")
-    console.log("📦 Supabase 모듈 로드 성공:", {
-      hasStore: !!supabaseStore,
-      hasSupabase: !!supabaseStore?.supabase,
-      storeKeys: supabaseStore ? Object.keys(supabaseStore) : [],
-      hasSavePage: typeof supabaseStore?.savePage === 'function',
-      hasGetPage: typeof supabaseStore?.getPage === 'function'
+  console.log("📦 Supabase 모듈 로드 성공:", {
+    hasStore: !!supabaseStore,
+    hasSupabase: !!supabaseStore?.supabase,
+    storeKeys: supabaseStore ? Object.keys(supabaseStore) : [],
+    hasSavePage: typeof supabaseStore?.savePage === 'function',
+    hasGetPage: typeof supabaseStore?.getPage === 'function'
+  })
+  
+  // Supabase 클라이언트가 제대로 초기화되었는지 확인
+  // supabaseStore는 { supabase, savePage, getPage, ... } 형태
+  if (supabaseStore && supabaseStore.supabase) {
+    supabaseAvailable = true
+    console.log("✅ Supabase 연결됨")
+    console.log("📊 Supabase 클라이언트 상태:", {
+      hasClient: !!supabaseStore.supabase,
+      clientType: typeof supabaseStore.supabase,
+      hasFrom: typeof supabaseStore.supabase.from === 'function',
+      hasSavePage: typeof supabaseStore.savePage === 'function',
+      hasGetPage: typeof supabaseStore.getPage === 'function'
     })
-    
-    // Supabase 클라이언트가 제대로 초기화되었는지 확인
-    // supabaseStore는 { supabase, savePage, getPage, ... } 형태
-    if (supabaseStore && supabaseStore.supabase) {
-      supabaseAvailable = true
-      console.log("✅ Supabase 연결됨")
-      console.log("📊 Supabase 클라이언트 상태:", {
-        hasClient: !!supabaseStore.supabase,
-        clientType: typeof supabaseStore.supabase,
-        hasFrom: typeof supabaseStore.supabase.from === 'function',
-        hasSavePage: typeof supabaseStore.savePage === 'function',
-        hasGetPage: typeof supabaseStore.getPage === 'function'
-      })
-    } else {
-      // 초기화 에러 정보 확인
-      const initError = supabaseStore?.initializationError
-      console.error("❌ Supabase 클라이언트가 초기화되지 않음!")
-      console.error("  - supabaseStore:", !!supabaseStore)
-      console.error("  - supabaseStore.supabase:", !!supabaseStore?.supabase)
-      console.error("  - supabaseStore 타입:", typeof supabaseStore)
-      console.error("  - supabaseStore 키:", supabaseStore ? Object.keys(supabaseStore) : [])
-      console.error("  - 초기화 에러:", initError?.message || "없음")
-      console.error("  - 환경 변수 확인:")
-      console.error("    - NEXT_PUBLIC_SUPABASE_URL:", !!process.env.NEXT_PUBLIC_SUPABASE_URL)
-      console.error("    - SUPABASE_SERVICE_ROLE_KEY:", !!process.env.SUPABASE_SERVICE_ROLE_KEY)
-      console.error("  - 환경 변수 값 (일부):")
-      console.error("    - URL prefix:", process.env.NEXT_PUBLIC_SUPABASE_URL?.substring(0, 30))
-      console.error("    - URL length:", process.env.NEXT_PUBLIC_SUPABASE_URL?.length)
-      console.error("    - Key length:", process.env.SUPABASE_SERVICE_ROLE_KEY?.length)
-      console.error("    - URL starts with https://:", process.env.NEXT_PUBLIC_SUPABASE_URL?.startsWith("https://"))
-      console.error("    - Key is valid length:", (process.env.SUPABASE_SERVICE_ROLE_KEY?.length || 0) > 50)
-      supabaseAvailable = false
-    }
-  } catch (e: any) {
-    console.error("❌ Supabase 로드 실패, 메모리 저장소 사용:", e.message)
-    console.error("에러 상세:", e.stack)
+  } else {
+    // 초기화 에러 정보 확인
+    const initError = supabaseStore?.initializationError
+    console.error("❌ Supabase 클라이언트가 초기화되지 않음!")
+    console.error("  - supabaseStore:", !!supabaseStore)
+    console.error("  - supabaseStore.supabase:", !!supabaseStore?.supabase)
+    console.error("  - supabaseStore 타입:", typeof supabaseStore)
+    console.error("  - supabaseStore 키:", supabaseStore ? Object.keys(supabaseStore) : [])
+    console.error("  - 초기화 에러:", initError?.message || "없음")
+    console.error("  - 환경 변수 확인:")
+    console.error("    - NEXT_PUBLIC_SUPABASE_URL:", !!process.env.NEXT_PUBLIC_SUPABASE_URL)
+    console.error("    - SUPABASE_SERVICE_ROLE_KEY:", !!process.env.SUPABASE_SERVICE_ROLE_KEY)
+    console.error("  - 환경 변수 값 (일부):")
+    console.error("    - URL prefix:", process.env.NEXT_PUBLIC_SUPABASE_URL?.substring(0, 30))
+    console.error("    - URL length:", process.env.NEXT_PUBLIC_SUPABASE_URL?.length)
+    console.error("    - Key length:", process.env.SUPABASE_SERVICE_ROLE_KEY?.length)
+    console.error("    - URL starts with https://:", process.env.NEXT_PUBLIC_SUPABASE_URL?.startsWith("https://"))
+    console.error("    - Key is valid length:", (process.env.SUPABASE_SERVICE_ROLE_KEY?.length || 0) > 50)
     supabaseAvailable = false
   }
 } else {

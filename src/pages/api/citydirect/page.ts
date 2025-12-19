@@ -73,7 +73,7 @@ export default async function handler(req, res) {
     })
     
     // Supabase 초기화 상태 확인
-    const { debugMemoryStore } = require("@/lib/db")
+    const { debugMemoryStore } = await import("@/lib/db")
     const beforeDebug = debugMemoryStore()
     console.log("📊 저장 전 메모리 상태:", beforeDebug)
     
@@ -82,7 +82,7 @@ export default async function handler(req, res) {
     
     // Supabase 클라이언트 직접 확인
     try {
-      const { supabase: directSupabase, initializationError } = require("@/lib/supabase")
+      const { supabase: directSupabase, initializationError } = await import("@/lib/supabase")
       console.log("🔍 Supabase 클라이언트 직접 확인:", {
         hasClient: !!directSupabase,
         clientType: typeof directSupabase,
@@ -119,8 +119,8 @@ export default async function handler(req, res) {
     const isProduction = process.env.NODE_ENV === "production"
     if (isProduction) {
       try {
-        const { getPage } = require("@/lib/db")
-        const savedPage = await getPage(page.slug)
+        const { getPage: getPageVerify } = await import("@/lib/db")
+        const savedPage = await getPageVerify(page.slug)
         if (savedPage) {
           verificationResult = {
             success: true,
@@ -153,7 +153,8 @@ export default async function handler(req, res) {
     }
     
     // 저장 후 메모리 상태 확인 (Supabase 사용 시에는 의미 없지만 로그용)
-    const afterDebug = debugMemoryStore()
+    const { debugMemoryStore: debugAfter } = await import("@/lib/db")
+    const afterDebug = debugAfter()
     console.log("✅ 저장 완료:", page.slug)
     console.log("📊 저장 후 메모리 상태:", afterDebug)
 
@@ -200,7 +201,7 @@ export default async function handler(req, res) {
       // Supabase 초기화 에러 정보 가져오기
       let initErrorInfo = null
       try {
-        const { initializationError } = require("@/lib/supabase")
+        const { initializationError } = await import("@/lib/supabase")
         if (initializationError) {
           initErrorInfo = {
             message: initializationError.message,

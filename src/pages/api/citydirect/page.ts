@@ -76,23 +76,31 @@ export default async function handler(req, res) {
       throw saveError
     }
     
-    // 저장 후 메모리 상태 확인
+    // 저장 후 Supabase에 실제로 저장되었는지 확인
+    try {
+      const { getPage } = require("@/lib/db")
+      const savedPage = await getPage(page.slug)
+      if (savedPage) {
+        console.log("✅ 저장 검증 성공 - Supabase에서 페이지 확인됨:", {
+          slug: savedPage.slug,
+          status: savedPage.status,
+          storage: "Supabase"
+        })
+      } else {
+        console.error("❌ 저장 검증 실패 - Supabase에서 페이지를 찾을 수 없음!")
+        console.error("💡 가능한 원인:")
+        console.error("  1. Supabase 저장이 실패했지만 에러가 발생하지 않음")
+        console.error("  2. RLS (Row Level Security) 정책 문제")
+        console.error("  3. 테이블 스키마 불일치")
+      }
+    } catch (verifyError: any) {
+      console.warn("⚠️ 저장 검증 중 오류 (무시):", verifyError.message)
+    }
+    
+    // 저장 후 메모리 상태 확인 (Supabase 사용 시에는 의미 없지만 로그용)
     const afterDebug = debugMemoryStore()
     console.log("✅ 저장 완료:", page.slug)
     console.log("📊 저장 후 메모리 상태:", afterDebug)
-    
-    // 메모리에 저장되지 않은 경우 경고
-    if (afterDebug.size === 0) {
-      console.error("❌ 경고: 저장 후 메모리가 비어있음!")
-      console.error("저장 전:", beforeDebug.size, "저장 후:", afterDebug.size)
-    } else {
-      console.log("✅ 메모리 저장 확인:", {
-        before: beforeDebug.size,
-        after: afterDebug.size,
-        savedSlug: page.slug,
-        inMemory: afterDebug.slugs.includes(page.slug)
-      })
-    }
 
     res.json({ ok: true, slug: page.slug })
   } catch (error: any) {

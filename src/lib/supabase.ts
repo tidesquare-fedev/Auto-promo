@@ -92,13 +92,51 @@ export async function savePage(page: CityDirectPage): Promise<void> {
     console.error("에러 코드:", error.code)
     console.error("에러 메시지:", error.message)
     console.error("에러 상세:", error.details, error.hint)
+    console.error("저장 시도한 데이터:", {
+      slug: pageData.slug,
+      status: pageData.status,
+      hasSeo: !!pageData.seo,
+      hasContent: !!pageData.content,
+      contentLength: Array.isArray(pageData.content) ? pageData.content.length : 0
+    })
     throw new Error(`페이지 저장 실패: ${error.message} (코드: ${error.code})`)
+  }
+
+  if (!data || data.length === 0) {
+    console.error("❌ Supabase 저장 후 데이터가 반환되지 않음!")
+    console.error("저장 시도한 데이터:", {
+      slug: pageData.slug,
+      status: pageData.status
+    })
+    throw new Error("페이지 저장 후 데이터가 반환되지 않았습니다")
   }
 
   console.log("✅ Supabase 저장 성공:", {
     slug: pageData.slug,
-    data: data?.[0]?.slug
+    returnedSlug: data?.[0]?.slug,
+    returnedStatus: data?.[0]?.status,
+    returnedDataKeys: data?.[0] ? Object.keys(data[0]) : []
   })
+  
+  // 저장 직후 검증: 실제로 조회 가능한지 확인
+  try {
+    const { data: verifyData, error: verifyError } = await supabase
+      .from("citydirect_pages")
+      .select("slug, status")
+      .eq("slug", pageData.slug)
+      .single()
+    
+    if (verifyError) {
+      console.warn("⚠️ 저장 후 검증 실패:", verifyError.message)
+    } else if (verifyData) {
+      console.log("✅ 저장 후 검증 성공 - 즉시 조회 가능:", {
+        slug: verifyData.slug,
+        status: verifyData.status
+      })
+    }
+  } catch (verifyErr: any) {
+    console.warn("⚠️ 저장 후 검증 중 오류 (무시):", verifyErr.message)
+  }
 }
 
 export async function getPage(slug: string): Promise<CityDirectPage | null> {

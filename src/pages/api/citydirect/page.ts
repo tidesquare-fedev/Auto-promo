@@ -16,6 +16,15 @@ export default async function handler(req, res) {
     hasSeo: !!page?.seo
   })
 
+  // Supabase 연결 상태 확인 (디버깅용) - try 블록 밖에서 선언
+  const supabaseStatus = {
+    hasEnvUrl: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
+    hasEnvKey: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
+    nodeEnv: process.env.NODE_ENV,
+    urlPrefix: process.env.NEXT_PUBLIC_SUPABASE_URL?.substring(0, 30),
+    keyLength: process.env.SUPABASE_SERVICE_ROLE_KEY?.length
+  }
+
   try {
     // 필수 필드 검증
     if (!page) {
@@ -68,14 +77,7 @@ export default async function handler(req, res) {
     const beforeDebug = debugMemoryStore()
     console.log("📊 저장 전 메모리 상태:", beforeDebug)
     
-    // Supabase 연결 상태 확인 (디버깅용)
-    const supabaseStatus = {
-      hasEnvUrl: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
-      hasEnvKey: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
-      nodeEnv: process.env.NODE_ENV,
-      urlPrefix: process.env.NEXT_PUBLIC_SUPABASE_URL?.substring(0, 30),
-      keyLength: process.env.SUPABASE_SERVICE_ROLE_KEY?.length
-    }
+    // Supabase 연결 상태 로그
     console.log("🔍 Supabase 연결 상태 확인:", supabaseStatus)
     
     // Supabase 클라이언트 직접 확인

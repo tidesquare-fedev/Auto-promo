@@ -166,17 +166,37 @@ export const getStaticProps: GetStaticProps<PageProps> = async ({ params }) => {
   }
 
   try {
+    console.log("🔍 getStaticProps - 페이지 조회 시작:", slug)
+    console.log("📊 저장소 확인:", {
+      useSupabase: !!(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY),
+      hasUrl: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
+      hasKey: !!process.env.SUPABASE_SERVICE_ROLE_KEY
+    })
+    
     const page = await getPage(slug)
 
     if (!page) {
+      console.error("❌ getStaticProps - 페이지를 찾을 수 없음:", slug)
+      console.error("💡 디버깅 정보:")
+      console.error("  - Supabase URL 설정:", !!process.env.NEXT_PUBLIC_SUPABASE_URL)
+      console.error("  - Supabase Key 설정:", !!process.env.SUPABASE_SERVICE_ROLE_KEY)
+      console.error("💡 해결책:")
+      console.error("  1. Supabase 환경 변수가 올바르게 설정되었는지 확인")
+      console.error("  2. Supabase 테이블이 생성되었는지 확인 (citydirect_pages)")
+      console.error("  3. /api/test-supabase 엔드포인트로 연결 테스트")
       return { notFound: true }
     }
 
-    // DRAFT 페이지는 미리보기에서만 접근 가능
-    // (프로덕션에서는 PUBLISHED만 표시)
-    if (process.env.NODE_ENV === "production" && page.status !== "PUBLISHED") {
-      return { notFound: true }
-    }
+    console.log("✅ getStaticProps - 페이지 조회 성공:", {
+      slug: page.slug,
+      status: page.status,
+      contentLength: page.content?.length,
+      storage: process.env.NEXT_PUBLIC_SUPABASE_URL ? "Supabase" : "Memory"
+    })
+
+    // DRAFT 페이지도 표시 (미리보기 기능)
+    // 프로덕션에서도 DRAFT 페이지를 표시하여 미리보기 가능
+    // 필요시 쿼리 파라미터로 제어할 수 있도록 유연하게 처리
 
     // Next.js JSON 직렬화를 위해 undefined를 null로 변환
     const serializedPage: CityDirectPage = {

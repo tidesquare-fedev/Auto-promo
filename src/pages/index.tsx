@@ -42,7 +42,7 @@ export default function Home() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-2">
-              <Link href="https://github.com" target="_blank">
+              <Link href="https://github.com/tidesquare-fedev/Auto-promo" target="_blank">
                 <Button variant="outline" className="w-full">
                   GitHub
                 </Button>

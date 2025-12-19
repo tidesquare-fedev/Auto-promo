@@ -202,17 +202,33 @@ export default function AdminEditor() {
       }
 
       console.log("✅ 저장 성공:", responseData)
+      console.log("📊 저장소 정보:", {
+        useSupabase: !!(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY),
+        slug: page.slug,
+        status: page.status
+      })
 
       // 저장 후 revalidate (에러가 나도 무시)
       if (page.slug) {
         try {
-          await fetch("/api/revalidate", {
+          console.log("🔄 페이지 재검증 요청 중...")
+          const revalidateRes = await fetch("/api/revalidate", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ slug: page.slug })
           })
+          const revalidateData = await revalidateRes.json()
+          console.log("📊 재검증 응답:", revalidateData)
+          
+          if (revalidateData.revalidated) {
+            console.log("✅ 페이지 재검증 완료 - 미리보기 가능")
+          } else {
+            console.warn("⚠️ 재검증이 완료되지 않았습니다. 잠시 후 다시 시도하세요.")
+            console.warn("💡 Supabase를 사용하는 경우, 재검증이 필요하지 않을 수 있습니다.")
+          }
         } catch (revalidateError) {
           console.warn("Revalidate 실패 (무시):", revalidateError)
+          console.warn("💡 Supabase를 사용하는 경우, 재검증이 필요하지 않을 수 있습니다.")
         }
       }
 

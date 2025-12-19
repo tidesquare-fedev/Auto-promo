@@ -84,9 +84,11 @@ export function debugMemoryStore() {
 }
 
 // 안전한 Supabase 호출 래퍼
+// 프로덕션 환경에서는 Supabase 저장 실패 시 에러를 던짐 (fallback 방지)
 async function safeSupabaseCall<T>(
   fn: () => Promise<T>,
-  fallback: () => T | Promise<T>
+  fallback: () => T | Promise<T>,
+  throwOnError: boolean = false // 프로덕션에서는 true로 설정
 ): Promise<T> {
   // Supabase 사용 가능 여부 재확인
   const canUseSupabase = supabaseAvailable && supabaseStore && supabaseStore.supabase
@@ -105,8 +107,18 @@ async function safeSupabaseCall<T>(
     console.log("🔄 Supabase 호출 시도...")
     return await fn()
   } catch (error: any) {
-    console.error("❌ Supabase 호출 실패, 메모리 저장소로 fallback:", error.message)
+    console.error("❌ Supabase 호출 실패:", error.message)
     console.error("에러 상세:", error.stack)
+    
+    // 프로덕션 환경이거나 throwOnError가 true면 에러를 다시 던짐
+    const isProduction = process.env.NODE_ENV === "production"
+    if (throwOnError || isProduction) {
+      console.error("🚨 프로덕션 환경: Supabase 저장 실패 시 에러를 던집니다")
+      throw error
+    }
+    
+    // 개발 환경에서만 fallback
+    console.warn("⚠️ 개발 환경: 메모리 저장소로 fallback")
     supabaseAvailable = false // 다음 호출부터 메모리 저장소 사용
     const result = fallback()
     return result instanceof Promise ? await result : result
@@ -138,13 +150,39 @@ export async function savePage(page: CityDirectPage): Promise<void> {
     hasSupabaseStore: !!supabaseStore
   })
 
+  // 프로덕션에서는 Supabase 저장 실패 시 에러를 던짐 (throwOnError: true)
+  const isProduction = process.env.NODE_ENV === "production"
   return safeSupabaseCall(
+    // Supabase 저장 함수
     async () => {
       console.log("📤 Supabase 저장 시도...")
-      await supabaseStore.savePage(pageWithTimestamp)
-      console.log("✅ Supabase 저장 성공")
+      try {
+        await supabaseStore.savePage(pageWithTimestamp)
+        console.log("✅ Supabase 저장 성공")
+        
+        // 저장 직후 즉시 검증
+        const verifyPage = await supabaseStore.getPage(pageWithTimestamp.slug)
+        if (!verifyPage) {
+          console.error("❌ 저장 후 즉시 검증 실패 - Supabase에서 페이지를 찾을 수 없음!")
+          throw new Error("Supabase 저장 후 검증 실패: 페이지를 찾을 수 없습니다")
+        }
+        console.log("✅ 저장 후 즉시 검증 성공:", {
+          slug: verifyPage.slug,
+          status: verifyPage.status
+        })
+      } catch (saveError: any) {
+        console.error("❌ Supabase 저장 중 오류:", saveError.message)
+        // Supabase 저장 실패 시 에러를 다시 던져서 fallback 방지
+        // (프로덕션에서는 Supabase를 사용해야 하므로)
+        throw saveError
+      }
     },
+    // Fallback 함수 (프로덕션에서는 사용 안 함)
     () => {
+      // 프로덕션에서는 메모리 저장소 사용 안 함
+      if (isProduction) {
+        throw new Error("프로덕션 환경에서는 Supabase 저장이 필수입니다. Supabase 연결을 확인하세요.")
+      }
       console.log("📦 메모리 저장소 저장 시작...")
       const beforeSize = pages.size
       const beforeSlugs = Array.from(pages.keys())
@@ -186,7 +224,9 @@ export async function savePage(page: CityDirectPage): Promise<void> {
       
       console.log("✅ 저장 검증 완료:", savedPage.slug)
       return undefined // void 반환
-    }
+    },
+    // throwOnError: 프로덕션에서는 true
+    isProduction
   )
 }
 

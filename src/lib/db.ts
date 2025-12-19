@@ -21,10 +21,13 @@ if (useSupabase) {
     console.log("📦 Supabase 모듈 로드 성공:", {
       hasStore: !!supabaseStore,
       hasSupabase: !!supabaseStore?.supabase,
-      storeKeys: supabaseStore ? Object.keys(supabaseStore) : []
+      storeKeys: supabaseStore ? Object.keys(supabaseStore) : [],
+      hasSavePage: typeof supabaseStore?.savePage === 'function',
+      hasGetPage: typeof supabaseStore?.getPage === 'function'
     })
     
     // Supabase 클라이언트가 제대로 초기화되었는지 확인
+    // supabaseStore는 { supabase, savePage, getPage, ... } 형태
     if (supabaseStore && supabaseStore.supabase) {
       supabaseAvailable = true
       console.log("✅ Supabase 연결됨")
@@ -32,15 +35,21 @@ if (useSupabase) {
         hasClient: !!supabaseStore.supabase,
         clientType: typeof supabaseStore.supabase,
         hasFrom: typeof supabaseStore.supabase.from === 'function',
-        hasSavePage: typeof supabaseStore.savePage === 'function'
+        hasSavePage: typeof supabaseStore.savePage === 'function',
+        hasGetPage: typeof supabaseStore.getPage === 'function'
       })
     } else {
       console.error("❌ Supabase 클라이언트가 초기화되지 않음!")
       console.error("  - supabaseStore:", !!supabaseStore)
       console.error("  - supabaseStore.supabase:", !!supabaseStore?.supabase)
+      console.error("  - supabaseStore 타입:", typeof supabaseStore)
+      console.error("  - supabaseStore 키:", supabaseStore ? Object.keys(supabaseStore) : [])
       console.error("  - 환경 변수 확인:")
       console.error("    - NEXT_PUBLIC_SUPABASE_URL:", !!process.env.NEXT_PUBLIC_SUPABASE_URL)
       console.error("    - SUPABASE_SERVICE_ROLE_KEY:", !!process.env.SUPABASE_SERVICE_ROLE_KEY)
+      console.error("  - 환경 변수 값 (일부):")
+      console.error("    - URL prefix:", process.env.NEXT_PUBLIC_SUPABASE_URL?.substring(0, 30))
+      console.error("    - Key length:", process.env.SUPABASE_SERVICE_ROLE_KEY?.length)
       supabaseAvailable = false
     }
   } catch (e: any) {
@@ -52,6 +61,7 @@ if (useSupabase) {
   console.log("ℹ️ Supabase 설정 없음, 메모리 저장소 사용")
   console.log("  - NEXT_PUBLIC_SUPABASE_URL:", !!process.env.NEXT_PUBLIC_SUPABASE_URL)
   console.log("  - SUPABASE_SERVICE_ROLE_KEY:", !!process.env.SUPABASE_SERVICE_ROLE_KEY)
+  console.log("  - useSupabase:", useSupabase)
 }
 
 // 메모리 저장소 (개발 환경 또는 Supabase 미사용 시)
@@ -94,11 +104,23 @@ async function safeSupabaseCall<T>(
   const canUseSupabase = supabaseAvailable && supabaseStore && supabaseStore.supabase
   
   if (!canUseSupabase) {
-    console.log("📦 Supabase 미사용, 메모리 저장소로 fallback:", {
+    const fallbackInfo = {
       supabaseAvailable,
       hasStore: !!supabaseStore,
-      hasClient: !!supabaseStore?.supabase
-    })
+      hasClient: !!supabaseStore?.supabase,
+      storeKeys: supabaseStore ? Object.keys(supabaseStore) : [],
+      hasEnvUrl: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
+      hasEnvKey: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
+      nodeEnv: process.env.NODE_ENV
+    }
+    console.log("📦 Supabase 미사용, 메모리 저장소로 fallback:", fallbackInfo)
+    
+    // 프로덕션 환경에서는 상세 정보와 함께 에러
+    const isProduction = process.env.NODE_ENV === "production"
+    if (isProduction && throwOnError) {
+      throw new Error(`Supabase를 사용할 수 없습니다. 상세 정보: ${JSON.stringify(fallbackInfo)}`)
+    }
+    
     const result = fallback()
     return result instanceof Promise ? await result : result
   }
@@ -152,6 +174,32 @@ export async function savePage(page: CityDirectPage): Promise<void> {
 
   // 프로덕션에서는 Supabase 저장 실패 시 에러를 던짐 (throwOnError: true)
   const isProduction = process.env.NODE_ENV === "production"
+  
+  // Supabase 사용 가능 여부 재확인 및 상세 로그
+  const canUseSupabase = supabaseAvailable && supabaseStore && supabaseStore.supabase
+  console.log("🔍 savePage - Supabase 사용 가능 여부:", {
+    canUseSupabase,
+    supabaseAvailable,
+    hasSupabaseStore: !!supabaseStore,
+    hasSupabaseClient: !!supabaseStore?.supabase,
+    isProduction,
+    environment: process.env.NODE_ENV
+  })
+  
+  if (!canUseSupabase && isProduction) {
+    // 프로덕션에서 Supabase를 사용할 수 없으면 즉시 에러
+    const errorDetails: any = {
+      message: "프로덕션 환경에서는 Supabase 저장이 필수입니다",
+      supabaseAvailable,
+      hasSupabaseStore: !!supabaseStore,
+      hasSupabaseClient: !!supabaseStore?.supabase,
+      hasEnvUrl: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
+      hasEnvKey: !!process.env.SUPABASE_SERVICE_ROLE_KEY
+    }
+    console.error("❌ Supabase 사용 불가:", errorDetails)
+    throw new Error(`프로덕션 환경에서는 Supabase 저장이 필수입니다. Supabase 연결을 확인하세요. (상세: ${JSON.stringify(errorDetails)})`)
+  }
+  
   return safeSupabaseCall(
     // Supabase 저장 함수
     async () => {
@@ -181,7 +229,13 @@ export async function savePage(page: CityDirectPage): Promise<void> {
     () => {
       // 프로덕션에서는 메모리 저장소 사용 안 함
       if (isProduction) {
-        throw new Error("프로덕션 환경에서는 Supabase 저장이 필수입니다. Supabase 연결을 확인하세요.")
+        const errorDetails = {
+          supabaseAvailable,
+          hasSupabaseStore: !!supabaseStore,
+          hasSupabaseClient: !!supabaseStore?.supabase
+        }
+        console.error("❌ 프로덕션에서 fallback 시도:", errorDetails)
+        throw new Error(`프로덕션 환경에서는 Supabase 저장이 필수입니다. Supabase 연결을 확인하세요. (상세: ${JSON.stringify(errorDetails)})`)
       }
       console.log("📦 메모리 저장소 저장 시작...")
       const beforeSize = pages.size

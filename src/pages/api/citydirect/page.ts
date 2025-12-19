@@ -63,10 +63,32 @@ export default async function handler(req, res) {
       timestamp: new Date().toISOString()
     })
     
-    // 저장 전 메모리 상태 확인
+    // Supabase 초기화 상태 확인
     const { debugMemoryStore } = require("@/lib/db")
     const beforeDebug = debugMemoryStore()
     console.log("📊 저장 전 메모리 상태:", beforeDebug)
+    
+    // Supabase 연결 상태 확인 (디버깅용)
+    const supabaseStatus = {
+      hasEnvUrl: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
+      hasEnvKey: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
+      nodeEnv: process.env.NODE_ENV,
+      urlPrefix: process.env.NEXT_PUBLIC_SUPABASE_URL?.substring(0, 30),
+      keyLength: process.env.SUPABASE_SERVICE_ROLE_KEY?.length
+    }
+    console.log("🔍 Supabase 연결 상태 확인:", supabaseStatus)
+    
+    // Supabase 클라이언트 직접 확인
+    try {
+      const { supabase: directSupabase } = require("@/lib/supabase")
+      console.log("🔍 Supabase 클라이언트 직접 확인:", {
+        hasClient: !!directSupabase,
+        clientType: typeof directSupabase,
+        hasFrom: typeof directSupabase?.from === 'function'
+      })
+    } catch (supabaseCheckError: any) {
+      console.warn("⚠️ Supabase 클라이언트 직접 확인 실패:", supabaseCheckError.message)
+    }
     
     let saveSuccess = false
     let saveError: any = null
@@ -159,6 +181,7 @@ export default async function handler(req, res) {
     // Supabase 관련 에러인 경우 추가 정보
     const isSupabaseError = error?.message?.includes("Supabase") || 
                            error?.message?.includes("RLS") ||
+                           error?.message?.includes("프로덕션 환경에서는 Supabase") ||
                            error?.code?.startsWith("PGRST") ||
                            error?.code?.startsWith("42")
     
@@ -168,12 +191,14 @@ export default async function handler(req, res) {
       errorResponse.debug.supabaseErrorMessage = error?.message
       errorResponse.debug.supabaseErrorDetails = error?.details
       errorResponse.debug.supabaseErrorHint = error?.hint
+      errorResponse.debug.supabaseStatus = supabaseStatus
       errorResponse.debug.suggestions = [
-        "Supabase 환경 변수가 올바르게 설정되었는지 확인 (NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)",
-        "RLS 정책이 올바르게 설정되었는지 확인 (Service role full access 정책 필요)",
+        "Vercel Dashboard → Settings → Environment Variables에서 환경 변수 확인",
+        "NEXT_PUBLIC_SUPABASE_URL과 SUPABASE_SERVICE_ROLE_KEY가 올바르게 설정되었는지 확인",
+        "환경 변수 이름이 정확한지 확인 (대소문자 구분)",
         "/api/test-supabase로 연결 테스트",
-        "Supabase Dashboard → Table Editor에서 테이블이 존재하는지 확인",
-        "Supabase Dashboard → SQL Editor에서 직접 INSERT 쿼리 테스트"
+        "Supabase Dashboard → Authentication → Policies에서 Service role full access 정책 확인",
+        "Supabase Dashboard → Table Editor에서 citydirect_pages 테이블이 존재하는지 확인"
       ]
       
       // 특정 에러 코드에 대한 구체적인 해결책

@@ -68,12 +68,18 @@ export default async function handler(req, res) {
     const beforeDebug = debugMemoryStore()
     console.log("📊 저장 전 메모리 상태:", beforeDebug)
     
+    let saveSuccess = false
+    let saveError: any = null
+    let verificationResult: any = null
+
     try {
       await savePage(page)
+      saveSuccess = true
       console.log("✅ savePage 호출 완료")
-    } catch (saveError: any) {
-      console.error("❌ savePage 호출 실패:", saveError)
-      throw saveError
+    } catch (error: any) {
+      saveError = error
+      console.error("❌ savePage 호출 실패:", error)
+      throw error
     }
     
     // 저장 후 Supabase에 실제로 저장되었는지 확인 (프로덕션 환경에서만)
@@ -83,20 +89,31 @@ export default async function handler(req, res) {
         const { getPage } = require("@/lib/db")
         const savedPage = await getPage(page.slug)
         if (savedPage) {
-          console.log("✅ 저장 검증 성공 - Supabase에서 페이지 확인됨:", {
+          verificationResult = {
+            success: true,
             slug: savedPage.slug,
             status: savedPage.status,
             storage: "Supabase"
-          })
+          }
+          console.log("✅ 저장 검증 성공 - Supabase에서 페이지 확인됨:", verificationResult)
         } else {
-          console.error("❌ 저장 검증 실패 - Supabase에서 페이지를 찾을 수 없음!")
-          console.error("💡 가능한 원인:")
-          console.error("  1. Supabase 저장이 실패했지만 에러가 발생하지 않음")
-          console.error("  2. RLS (Row Level Security) 정책 문제")
-          console.error("  3. 테이블 스키마 불일치")
+          verificationResult = {
+            success: false,
+            error: "Supabase에서 페이지를 찾을 수 없음",
+            possibleCauses: [
+              "Supabase 저장이 실패했지만 에러가 발생하지 않음",
+              "RLS (Row Level Security) 정책 문제",
+              "테이블 스키마 불일치"
+            ]
+          }
+          console.error("❌ 저장 검증 실패:", verificationResult)
           throw new Error("저장 검증 실패: Supabase에서 페이지를 찾을 수 없습니다")
         }
       } catch (verifyError: any) {
+        verificationResult = {
+          success: false,
+          error: verifyError.message
+        }
         console.error("❌ 저장 검증 중 오류:", verifyError.message)
         throw verifyError
       }
@@ -107,13 +124,44 @@ export default async function handler(req, res) {
     console.log("✅ 저장 완료:", page.slug)
     console.log("📊 저장 후 메모리 상태:", afterDebug)
 
-    res.json({ ok: true, slug: page.slug })
+    res.json({ 
+      ok: true, 
+      slug: page.slug,
+      debug: {
+        saveSuccess,
+        verification: verificationResult,
+        environment: isProduction ? "production" : "development",
+        timestamp: new Date().toISOString()
+      }
+    })
   } catch (error: any) {
     console.error("페이지 저장 오류:", error)
-    res.status(500).json({ 
+    
+    // 상세한 에러 정보를 응답에 포함
+    const errorResponse: any = {
       error: "페이지 저장 실패",
-      message: error?.message || "Unknown error"
-    })
+      message: error?.message || "Unknown error",
+      debug: {
+        slug: page?.slug,
+        hasSeo: !!page?.seo,
+        hasContent: !!page?.content,
+        contentLength: page?.content?.length || 0,
+        status: page?.status,
+        timestamp: new Date().toISOString()
+      }
+    }
+
+    // Supabase 관련 에러인 경우 추가 정보
+    if (error?.message?.includes("Supabase") || error?.message?.includes("RLS")) {
+      errorResponse.debug.supabaseError = true
+      errorResponse.debug.suggestions = [
+        "Supabase 환경 변수가 올바르게 설정되었는지 확인",
+        "RLS 정책이 올바르게 설정되었는지 확인",
+        "/api/test-supabase로 연결 테스트"
+      ]
+    }
+
+    res.status(500).json(errorResponse)
   }
 }
 

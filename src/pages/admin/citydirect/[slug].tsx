@@ -198,10 +198,38 @@ export default function AdminEditor() {
 
       if (!res.ok) {
         console.error("❌ 저장 실패:", responseData)
-        throw new Error(responseData.error || responseData.message || "저장 실패")
+        
+        // 디버깅 정보가 있으면 표시
+        if (responseData.debug) {
+          console.error("🔍 디버깅 정보:", responseData.debug)
+          if (responseData.debug.suggestions) {
+            console.error("💡 해결 방법:", responseData.debug.suggestions)
+          }
+        }
+        
+        // 사용자에게 더 자세한 에러 메시지 표시
+        let errorMessage = responseData.error || responseData.message || "저장 실패"
+        if (responseData.debug?.supabaseError) {
+          errorMessage += "\n\nSupabase 관련 오류입니다. 환경 변수와 RLS 정책을 확인하세요."
+        }
+        
+        throw new Error(errorMessage)
       }
 
       console.log("✅ 저장 성공:", responseData)
+      
+      // 디버깅 정보가 있으면 표시
+      if (responseData.debug) {
+        console.log("🔍 저장 디버깅 정보:", responseData.debug)
+        if (responseData.debug.verification) {
+          if (responseData.debug.verification.success) {
+            console.log("✅ Supabase 저장 검증 성공:", responseData.debug.verification)
+          } else {
+            console.warn("⚠️ Supabase 저장 검증 실패:", responseData.debug.verification)
+          }
+        }
+      }
+      
       console.log("📊 저장소 정보:", {
         useSupabase: !!(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY),
         slug: page.slug,
@@ -248,7 +276,19 @@ export default function AdminEditor() {
       // 기존 페이지 수정인 경우 현재 페이지 유지
     } catch (err: any) {
       console.error("❌ 저장 오류:", err)
-      setError(err.message || "저장 중 오류가 발생했습니다")
+      
+      // 에러 메시지를 더 자세하게 표시
+      let errorMessage = err.message || "저장 중 오류가 발생했습니다"
+      
+      // Supabase 관련 에러인 경우 추가 안내
+      if (errorMessage.includes("Supabase") || errorMessage.includes("RLS")) {
+        errorMessage += "\n\n💡 확인 사항:\n"
+        errorMessage += "1. Vercel 환경 변수 확인 (NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)\n"
+        errorMessage += "2. Supabase RLS 정책 확인\n"
+        errorMessage += "3. /api/test-supabase로 연결 테스트"
+      }
+      
+      setError(errorMessage)
     } finally {
       setSaving(false)
     }

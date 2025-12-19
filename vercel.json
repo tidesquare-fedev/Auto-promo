@@ -25,6 +25,15 @@
           "value": "s-maxage=1, stale-while-revalidate"
         }
       ]
+    },
+    {
+      "source": "/marketing/citydirect/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "s-maxage=60, stale-while-revalidate=86400"
+        }
+      ]
     }
   ],
   "rewrites": [

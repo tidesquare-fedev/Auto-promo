@@ -201,16 +201,37 @@ export default function AdminEditor() {
         
         // 디버깅 정보가 있으면 표시
         if (responseData.debug) {
-          console.error("🔍 디버깅 정보:", responseData.debug)
+          console.error("🔍 디버깅 정보:", JSON.stringify(responseData.debug, null, 2))
           if (responseData.debug.suggestions) {
             console.error("💡 해결 방법:", responseData.debug.suggestions)
+          }
+          if (responseData.debug.specificIssue) {
+            console.error("🎯 특정 문제:", responseData.debug.specificIssue)
+            console.error("🔧 해결책:", responseData.debug.specificSolution)
           }
         }
         
         // 사용자에게 더 자세한 에러 메시지 표시
         let errorMessage = responseData.error || responseData.message || "저장 실패"
+        
         if (responseData.debug?.supabaseError) {
-          errorMessage += "\n\nSupabase 관련 오류입니다. 환경 변수와 RLS 정책을 확인하세요."
+          errorMessage += "\n\n🔴 Supabase 관련 오류"
+          if (responseData.debug.supabaseErrorCode) {
+            errorMessage += `\n에러 코드: ${responseData.debug.supabaseErrorCode}`
+          }
+          if (responseData.debug.supabaseErrorMessage) {
+            errorMessage += `\n에러 메시지: ${responseData.debug.supabaseErrorMessage}`
+          }
+          if (responseData.debug.specificIssue) {
+            errorMessage += `\n\n문제: ${responseData.debug.specificIssue}`
+            errorMessage += `\n해결: ${responseData.debug.specificSolution}`
+          }
+          errorMessage += "\n\n💡 확인 사항:"
+          if (responseData.debug.suggestions) {
+            responseData.debug.suggestions.forEach((suggestion: string, index: number) => {
+              errorMessage += `\n${index + 1}. ${suggestion}`
+            })
+          }
         }
         
         throw new Error(errorMessage)

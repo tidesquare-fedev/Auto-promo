@@ -136,6 +136,7 @@ export default async function handler(req, res) {
     })
   } catch (error: any) {
     console.error("페이지 저장 오류:", error)
+    console.error("에러 스택:", error?.stack)
     
     // 상세한 에러 정보를 응답에 포함
     const errorResponse: any = {
@@ -147,18 +148,42 @@ export default async function handler(req, res) {
         hasContent: !!page?.content,
         contentLength: page?.content?.length || 0,
         status: page?.status,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        errorType: error?.constructor?.name,
+        errorCode: error?.code,
+        errorDetails: error?.details,
+        errorHint: error?.hint
       }
     }
 
     // Supabase 관련 에러인 경우 추가 정보
-    if (error?.message?.includes("Supabase") || error?.message?.includes("RLS")) {
+    const isSupabaseError = error?.message?.includes("Supabase") || 
+                           error?.message?.includes("RLS") ||
+                           error?.code?.startsWith("PGRST") ||
+                           error?.code?.startsWith("42")
+    
+    if (isSupabaseError) {
       errorResponse.debug.supabaseError = true
+      errorResponse.debug.supabaseErrorCode = error?.code
+      errorResponse.debug.supabaseErrorMessage = error?.message
+      errorResponse.debug.supabaseErrorDetails = error?.details
+      errorResponse.debug.supabaseErrorHint = error?.hint
       errorResponse.debug.suggestions = [
-        "Supabase 환경 변수가 올바르게 설정되었는지 확인",
-        "RLS 정책이 올바르게 설정되었는지 확인",
-        "/api/test-supabase로 연결 테스트"
+        "Supabase 환경 변수가 올바르게 설정되었는지 확인 (NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)",
+        "RLS 정책이 올바르게 설정되었는지 확인 (Service role full access 정책 필요)",
+        "/api/test-supabase로 연결 테스트",
+        "Supabase Dashboard → Table Editor에서 테이블이 존재하는지 확인",
+        "Supabase Dashboard → SQL Editor에서 직접 INSERT 쿼리 테스트"
       ]
+      
+      // 특정 에러 코드에 대한 구체적인 해결책
+      if (error?.code === "42501" || error?.message?.includes("permission denied")) {
+        errorResponse.debug.specificIssue = "RLS 정책 문제"
+        errorResponse.debug.specificSolution = "Supabase Dashboard → Authentication → Policies에서 Service role full access 정책 확인"
+      } else if (error?.code === "42P01" || error?.message?.includes("does not exist")) {
+        errorResponse.debug.specificIssue = "테이블이 존재하지 않음"
+        errorResponse.debug.specificSolution = "supabase/schema.sql 파일의 SQL을 Supabase SQL Editor에서 실행"
+      }
     }
 
     res.status(500).json(errorResponse)

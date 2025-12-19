@@ -99,7 +99,14 @@ export async function savePage(page: CityDirectPage): Promise<void> {
       hasContent: !!pageData.content,
       contentLength: Array.isArray(pageData.content) ? pageData.content.length : 0
     })
-    throw new Error(`페이지 저장 실패: ${error.message} (코드: ${error.code})`)
+    
+    // 에러 객체에 원본 정보를 포함하여 전달
+    const supabaseError: any = new Error(`페이지 저장 실패: ${error.message} (코드: ${error.code})`)
+    supabaseError.code = error.code
+    supabaseError.details = error.details
+    supabaseError.hint = error.hint
+    supabaseError.originalMessage = error.message
+    throw supabaseError
   }
 
   if (!data || data.length === 0) {

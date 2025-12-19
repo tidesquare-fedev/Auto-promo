@@ -33,6 +33,10 @@ export const designRules = {
     minSlides: 1,
     maxSlides: 20,
     required: ["slides"]
+  },
+  Image: {
+    max: 10,
+    required: ["image"]
   }
 }
 

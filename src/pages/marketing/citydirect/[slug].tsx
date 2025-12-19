@@ -11,6 +11,7 @@ import { ProductTabs } from "@/design-system/sections/ProductTabs"
 import { IntroText } from "@/design-system/sections/IntroText"
 import { FAQSection } from "@/design-system/sections/FAQSection"
 import { ImageCarousel } from "@/design-system/sections/ImageCarousel"
+import { ImageSection } from "@/design-system/sections/ImageSection"
 
 interface PageProps {
   page: CityDirectPage
@@ -88,6 +89,14 @@ export default function CityDirectMarketingPage({ page }: PageProps) {
             case "ImageCarousel":
               return (
                 <ImageCarousel
+                  key={key}
+                  {...section}
+                />
+              )
+
+            case "Image":
+              return (
+                <ImageSection
                   key={key}
                   {...section}
                 />

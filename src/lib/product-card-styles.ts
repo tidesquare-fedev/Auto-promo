@@ -18,10 +18,10 @@ export function getProductCardStyles(columns: 1 | 2 | 3 | 4): ProductCardStyles 
   }
 
   const imageHeightClassMap = {
-    1: "h-80",
-    2: "h-64",
-    3: "h-56",
-    4: "h-48"
+    1: "h-64 md:h-80",
+    2: "h-56 md:h-64",
+    3: "h-48 md:h-56",
+    4: "h-40 md:h-48"
   }
 
   const cardPaddingClassMap = {

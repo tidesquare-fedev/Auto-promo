@@ -42,6 +42,15 @@ export const designMcp = {
           slides: [{ id: "slide1", image: "", title: "", description: "" }],
           imageHeight: "medium"
         }
+      case "Image":
+        return {
+          type: "Image",
+          image: "",
+          alt: "",
+          caption: "",
+          fullWidth: true,
+          imageHeight: "auto"
+        }
       default:
         throw new Error(`알 수 없는 섹션 타입: ${type}`)
     }

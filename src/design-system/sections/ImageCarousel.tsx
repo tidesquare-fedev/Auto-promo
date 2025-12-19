@@ -10,34 +10,18 @@ export function ImageCarousel({ title, slides, style, imageHeight = "medium", cu
   const [touchEnd, setTouchEnd] = useState<number | null>(null)
   const styles = getSectionStyleClasses(style, "bg-white")
 
-  // 이미지 높이 클래스 매핑
+  // 이미지 높이 클래스 매핑 (모바일 반응형)
   const getImageHeightClass = () => {
     if (imageHeight === "custom") {
       return ""
     }
     const heightMap = {
-      small: "h-48",
-      medium: "h-64",
-      large: "h-96",
-      xlarge: "h-[500px]"
+      small: "h-40 md:h-48",
+      medium: "h-48 md:h-64",
+      large: "h-64 md:h-96",
+      xlarge: "h-80 md:h-[500px]"
     }
-    return heightMap[imageHeight] || "h-64"
-  }
-
-  // 이미지 스타일 (커스텀일 때 높이와 너비 모두 적용)
-  const getImageStyle = () => {
-    if (imageHeight === "custom") {
-      const style: React.CSSProperties = {}
-      if (customHeight) {
-        style.height = `${customHeight}px`
-      }
-      if (customWidth) {
-        style.width = `${customWidth}px`
-        style.maxWidth = `${customWidth}px`
-      }
-      return style
-    }
-    return {}
+    return heightMap[imageHeight] || "h-48 md:h-64"
   }
 
   // 최소 스와이프 거리
@@ -110,13 +94,20 @@ export function ImageCarousel({ title, slides, style, imageHeight = "medium", cu
         )}
 
         <div 
-          className="relative mx-auto flex flex-col items-center"
-          style={imageHeight === "custom" && customWidth ? { maxWidth: `${customWidth}px`, width: "100%" } : { maxWidth: "56rem" }}
+          className={`relative mx-auto flex flex-col items-center w-full ${
+            imageHeight === "custom" && customWidth 
+              ? "carousel-custom-width" 
+              : "max-w-full md:max-w-[56rem]"
+          }`}
+          style={
+            imageHeight === "custom" && customWidth 
+              ? { "--carousel-custom-width": `${customWidth}px` } as React.CSSProperties
+              : {}
+          }
         >
           {/* 캐러셀 컨테이너 */}
           <div
             className="relative overflow-hidden rounded-lg w-full"
-            style={imageHeight === "custom" && customWidth ? { width: `${customWidth}px`, maxWidth: "100%" } : {}}
             onTouchStart={handleTouchStart}
             onTouchMove={handleTouchMove}
             onTouchEnd={handleTouchEnd}
@@ -127,59 +118,82 @@ export function ImageCarousel({ title, slides, style, imageHeight = "medium", cu
                 transform: `translateX(-${currentIndex * 100}%)`
               }}
             >
-              {slides.map((slide, index) => (
-                <div
-                  key={slide.id}
-                  className="min-w-full flex-shrink-0 flex items-center justify-center"
-                  style={imageHeight === "custom" && customWidth ? { width: `${customWidth}px`, maxWidth: "100%" } : {}}
-                >
+              {slides.map((slide, index) => {
+                const imageContent = (
                   <div 
-                    className="relative flex items-center justify-center bg-gray-100 w-full"
-                    style={getImageStyle()}
+                    className={`relative w-full ${slide.link ? "cursor-pointer" : ""}`}
                   >
                     <img
                       src={slide.image}
                       alt={slide.title || `Slide ${index + 1}`}
-                      className={`${imageHeight === "custom" ? "" : "w-full"} ${getImageHeightClass()} object-contain`}
-                      style={getImageStyle()}
+                      className={`w-full ${
+                        imageHeight === "custom" 
+                          ? "carousel-custom-image" 
+                          : getImageHeightClass()
+                      } object-contain ${slide.link ? "transition-opacity hover:opacity-90" : ""}`}
+                      style={
+                        imageHeight === "custom" && customHeight
+                          ? { "--carousel-custom-height": `${customHeight}px` } as React.CSSProperties
+                          : {}
+                      }
                       onError={(e) => {
                         (e.target as HTMLImageElement).src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="800" height="400"%3E%3Crect fill="%23e5e7eb" width="800" height="400"/%3E%3Ctext x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle" fill="%239ca3af" font-size="24"%3E이미지를 불러올 수 없습니다%3C/text%3E%3C/svg%3E'
                       }}
                     />
                     {(slide.title || slide.description) && (
-                      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-6 text-white">
+                      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-4 md:p-6 text-white">
                         {slide.title && (
-                          <h3 className="text-xl font-bold mb-2">{slide.title}</h3>
+                          <h3 className="text-lg md:text-xl font-bold mb-1 md:mb-2">{slide.title}</h3>
                         )}
                         {slide.description && (
-                          <p className="text-sm opacity-90">{slide.description}</p>
+                          <p className="text-xs md:text-sm opacity-90">{slide.description}</p>
                         )}
                       </div>
                     )}
                   </div>
-                </div>
-              ))}
+                )
+
+                return (
+                  <div
+                    key={slide.id}
+                    className="min-w-full flex-shrink-0 flex items-center justify-center"
+                  >
+                    {slide.link ? (
+                      <a 
+                        href={slide.link} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="w-full block"
+                      >
+                        {imageContent}
+                      </a>
+                    ) : (
+                      imageContent
+                    )}
+                  </div>
+                )
+              })}
             </div>
           </div>
 
-          {/* 이전/다음 버튼 - 이미지 세로 중간에 배치, 양쪽 끝에 걸쳐지게 */}
+          {/* 이전/다음 버튼 - PC에서만 표시 */}
           {slides.length > 1 && (
             <>
               <button
                 onClick={goToPrevious}
-                className="absolute left-0 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-white/90 hover:bg-white rounded-full p-2 md:p-3 shadow-lg transition-all z-10"
+                className="hidden md:block absolute left-0 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-white/90 hover:bg-white rounded-full p-3 shadow-lg transition-all z-10"
                 aria-label="이전 슬라이드"
               >
-                <svg className="w-5 h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                 </svg>
               </button>
               <button
                 onClick={goToNext}
-                className="absolute right-0 top-1/2 translate-x-1/2 -translate-y-1/2 bg-white/90 hover:bg-white rounded-full p-2 md:p-3 shadow-lg transition-all z-10"
+                className="hidden md:block absolute right-0 top-1/2 translate-x-1/2 -translate-y-1/2 bg-white/90 hover:bg-white rounded-full p-3 shadow-lg transition-all z-10"
                 aria-label="다음 슬라이드"
               >
-                <svg className="w-5 h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                 </svg>
               </button>

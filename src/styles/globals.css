@@ -202,3 +202,40 @@
   margin-bottom: 0 !important;
 }
 
+/* 이미지 캐러셀 커스텀 사이즈 - 모바일 반응형 */
+.carousel-custom-width {
+  max-width: 100% !important;
+}
+
+@media (min-width: 768px) {
+  .carousel-custom-width {
+    max-width: var(--carousel-custom-width) !important;
+  }
+}
+
+/* 커스텀 높이 이미지 - 이미지 비율 유지하며 전체 표시 */
+.carousel-custom-image {
+  height: auto !important;
+  max-height: 500px !important;
+  object-fit: contain !important;
+}
+
+@media (min-width: 768px) {
+  .carousel-custom-image {
+    max-height: var(--carousel-custom-height) !important;
+  }
+}
+
+/* 이미지 섹션 커스텀 높이 - 비율 유지 */
+.image-custom-height {
+  height: auto !important;
+  max-height: 500px !important;
+  object-fit: contain !important;
+}
+
+@media (min-width: 768px) {
+  .image-custom-height {
+    max-height: var(--image-custom-height) !important;
+  }
+}
+

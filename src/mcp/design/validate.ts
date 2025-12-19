@@ -91,6 +91,13 @@ export function validateDesign(sections: PageSection[]) {
       }
     }
 
+    // Image 검증
+    if (s.type === "Image") {
+      if (!s.image) {
+        throw new Error("Image 섹션의 이미지 URL은 필수입니다")
+      }
+    }
+
     // 필수 필드 검증
     if (s.type === "Hero" && !s.title) {
       throw new Error("Hero 섹션의 제목은 필수입니다")

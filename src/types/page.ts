@@ -90,8 +90,22 @@ export type ImageCarouselSection = {
     image: string
     title?: string
     description?: string
+    link?: string // 이미지 클릭 시 이동할 URL
   }>
   imageHeight?: "small" | "medium" | "large" | "xlarge" | "custom"
+  customHeight?: number // imageHeight가 "custom"일 때 사용 (px 단위)
+  customWidth?: number // imageHeight가 "custom"일 때 사용 (px 단위)
+  style?: SectionStyle
+}
+
+export type ImageSection = {
+  type: "Image"
+  image: string
+  alt?: string
+  caption?: string
+  fullWidth?: boolean // true면 여백 없이 화면 가득, false면 컨테이너 안에 표시
+  link?: string // 이미지 클릭 시 이동할 URL
+  imageHeight?: "small" | "medium" | "large" | "xlarge" | "auto" | "custom"
   customHeight?: number // imageHeight가 "custom"일 때 사용 (px 단위)
   customWidth?: number // imageHeight가 "custom"일 때 사용 (px 단위)
   style?: SectionStyle
@@ -104,6 +118,7 @@ export type PageSection =
   | ProductTabsSection
   | FAQSection
   | ImageCarouselSection
+  | ImageSection
 
 export type CityInfo = {
   id: string      // city master ID

@@ -1,6 +1,6 @@
 import { TuttiProduct } from "@/types/tutti-api"
 
-const TNA_API_BASE = process.env.TNA_API_BASE || "https://s-apiactivity.tourvis.com/tna-api-v2"
+const TNA_API_BASE = process.env.TNA_API_BASE || "https://dev-apollo-api.tidesquare.com/tna-api-v2"
 const TNA_API_KEY = process.env.TNA_API_KEY || ""
 
 export type CitySearchResult = {

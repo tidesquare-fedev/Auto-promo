@@ -3,6 +3,7 @@ import { normalizeBadges, getBadgesForProduct } from "@/lib/badges"
 import { getSectionStyleClasses } from "@/lib/section-styles"
 import { getProductCardStyles } from "@/lib/product-card-styles"
 import { useProducts } from "@/hooks/useProducts"
+import { getProductUrl } from "@/lib/tourvis-url"
 
 export function ProductGrid({ title, productIds, columns = 4, style, badge, badgeTargets, badges }: ProductGridSection) {
   const { products, loading } = useProducts(productIds)
@@ -53,9 +54,12 @@ export function ProductGrid({ title, productIds, columns = 4, style, badge, badg
         </h2>
         <div className={`grid ${cardStyles.gridColsClass} gap-6 justify-items-center mx-auto`}>
             {products.map((product, idx) => (
-            <div 
-              key={product.id || idx} 
-              className="bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-xl transition-all duration-300 w-full flex flex-col relative"
+            <a
+              key={product.id || idx}
+              href={getProductUrl(product.id)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-xl transition-all duration-300 w-full flex flex-col relative block"
             >
               {product.thumbnail && (
                 <div className="relative bg-gray-100 flex-shrink-0">
@@ -65,25 +69,25 @@ export function ProductGrid({ title, productIds, columns = 4, style, badge, badg
                     className={`w-full ${cardStyles.imageHeightClass} object-cover`}
                   />
 
-                  <div className="absolute top-3 right-3 flex flex-col items-end gap-2">
+                  <div className="absolute top-2 right-2 md:top-3 md:right-3 flex flex-col items-end gap-1 md:gap-2">
                     {product.soldOut && (
-                      <div className="bg-red-500 text-white px-3 py-1 rounded-full text-sm font-semibold">
+                      <div className="bg-red-500 text-white px-2 py-0.5 md:px-3 md:py-1 rounded-full text-xs md:text-sm font-semibold">
                         품절
                       </div>
                     )}
                   </div>
 
                   {(product.isClosed || getBadgesForProduct(product.id, computedBadges).length > 0) && (
-                    <div className="absolute top-3 left-3 flex flex-row flex-wrap items-start gap-2">
+                    <div className="absolute top-2 left-2 md:top-3 md:left-3 flex flex-row flex-wrap items-start gap-1 md:gap-2">
                       {product.isClosed && (
-                        <div className="bg-gray-700 text-white px-3 py-1 rounded-full text-sm font-semibold">
+                        <div className="bg-gray-700 text-white px-2 py-0.5 md:px-3 md:py-1 rounded-full text-xs md:text-sm font-semibold">
                           종료
                         </div>
                       )}
                       {getBadgesForProduct(product.id, computedBadges).map((b) => (
                         <span
                           key={b.id}
-                          className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold shadow-sm"
+                          className="inline-flex items-center px-2 py-0.5 md:px-3 md:py-1 rounded-full text-xs font-semibold shadow-sm"
                           style={{
                             backgroundColor: b.backgroundColor || "rgba(17,24,39,0.9)",
                             color: b.textColor || "#ffffff",
@@ -144,7 +148,7 @@ export function ProductGrid({ title, productIds, columns = 4, style, badge, badg
             </div>
             
             {/* 하단 고정 영역: 가격 + 예약하기 버튼 */}
-            <div className="absolute bottom-0 left-0 right-0 bg-white border-t border-gray-100 p-4">
+            <div className="absolute bottom-0 left-0 right-0 bg-white border-t border-gray-100 p-3 md:p-4">
               {/* 가격 - 우측 정렬 */}
               {product.price && (
                 <p className={`font-bold text-gray-900 mb-2 text-right ${cardStyles.priceSizeClass}`}>
@@ -156,7 +160,7 @@ export function ProductGrid({ title, productIds, columns = 4, style, badge, badg
               <div className="flex gap-2 items-center">
                 {!product.soldOut && !product.isClosed && (
                   <button 
-                    className="flex-1 text-white font-bold py-3 px-4 rounded-lg transition-colors shadow-sm"
+                    className="flex-1 text-white font-bold py-2 md:py-3 px-3 md:px-4 rounded-lg transition-colors shadow-sm text-sm md:text-base"
                     style={{ backgroundColor: '#374151' }}
                     onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#1f2937'}
                     onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#374151'}
@@ -165,18 +169,18 @@ export function ProductGrid({ title, productIds, columns = 4, style, badge, badg
                   </button>
                 )}
                 {product.soldOut && (
-                  <div className="flex-1 bg-gray-100 text-gray-500 font-bold py-3 px-4 rounded-lg text-center">
+                  <div className="flex-1 bg-gray-100 text-gray-500 font-bold py-2 md:py-3 px-3 md:px-4 rounded-lg text-center text-sm md:text-base">
                     품절
                   </div>
                 )}
                 {product.isClosed && (
-                  <div className="flex-1 bg-gray-100 text-gray-500 font-bold py-3 px-4 rounded-lg text-center">
+                  <div className="flex-1 bg-gray-100 text-gray-500 font-bold py-2 md:py-3 px-3 md:px-4 rounded-lg text-center text-sm md:text-base">
                     종료된 상품
                   </div>
                 )}
               </div>
             </div>
-            </div>
+            </a>
           ))}
         </div>
       </div>

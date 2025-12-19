@@ -191,8 +191,23 @@ export async function savePage(page: CityDirectPage): Promise<void> {
 }
 
 export async function getPage(slug: string): Promise<CityDirectPage | null> {
+  console.log("🔍 db.getPage 호출:", {
+    slug,
+    useSupabase: supabaseAvailable,
+    hasSupabaseStore: !!supabaseStore
+  })
+
   return safeSupabaseCall(
-    () => supabaseStore.getPage(slug),
+    async () => {
+      console.log("📤 Supabase getPage 호출 중...")
+      const result = await supabaseStore.getPage(slug)
+      console.log("📥 Supabase getPage 결과:", {
+        slug,
+        found: !!result,
+        status: result?.status
+      })
+      return result
+    },
     () => {
       const page = pages.get(slug) || null
       console.log("📄 메모리 저장소에서 페이지 조회:", {
@@ -201,6 +216,9 @@ export async function getPage(slug: string): Promise<CityDirectPage | null> {
         mapSize: pages.size,
         allSlugs: Array.from(pages.keys())
       })
+      if (!page) {
+        console.warn("⚠️ 메모리 저장소에 페이지가 없습니다. Supabase를 사용하는 것을 권장합니다.")
+      }
       return page
     }
   )

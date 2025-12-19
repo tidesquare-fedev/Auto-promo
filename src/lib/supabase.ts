@@ -103,8 +103,15 @@ export async function savePage(page: CityDirectPage): Promise<void> {
 
 export async function getPage(slug: string): Promise<CityDirectPage | null> {
   if (!supabase) {
+    console.error("❌ Supabase 클라이언트가 초기화되지 않았습니다")
     throw new Error("Supabase 클라이언트가 초기화되지 않았습니다")
   }
+
+  console.log("🔍 Supabase getPage 호출:", {
+    slug,
+    hasClient: !!supabase,
+    tableName: "citydirect_pages"
+  })
 
   const { data, error } = await supabase
     .from("citydirect_pages")
@@ -115,13 +122,34 @@ export async function getPage(slug: string): Promise<CityDirectPage | null> {
   if (error) {
     if (error.code === "PGRST116") {
       // 데이터 없음
+      console.log("📭 Supabase에서 페이지를 찾을 수 없음:", slug)
+      console.log("💡 확인 사항:")
+      console.log("  1. Supabase 테이블에 데이터가 있는지 확인")
+      console.log("  2. slug가 정확히 일치하는지 확인")
+      console.log("  3. SQL: SELECT * FROM citydirect_pages WHERE slug = '" + slug + "'")
       return null
     }
-    console.error("Supabase get error:", error)
+    console.error("❌ Supabase get error:", {
+      code: error.code,
+      message: error.message,
+      details: error.details,
+      hint: error.hint,
+      slug
+    })
     throw new Error(`페이지 조회 실패: ${error.message}`)
   }
 
-  if (!data) return null
+  if (!data) {
+    console.log("📭 Supabase에서 데이터 없음 (null):", slug)
+    return null
+  }
+
+  console.log("✅ Supabase getPage 성공:", {
+    slug: data.slug,
+    status: data.status,
+    hasContent: !!data.content,
+    contentLength: Array.isArray(data.content) ? data.content.length : 0
+  })
 
   return {
     slug: data.slug,

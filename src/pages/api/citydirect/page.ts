@@ -82,12 +82,21 @@ export default async function handler(req, res) {
     
     // Supabase 클라이언트 직접 확인
     try {
-      const { supabase: directSupabase } = require("@/lib/supabase")
+      const { supabase: directSupabase, initializationError } = require("@/lib/supabase")
       console.log("🔍 Supabase 클라이언트 직접 확인:", {
         hasClient: !!directSupabase,
         clientType: typeof directSupabase,
-        hasFrom: typeof directSupabase?.from === 'function'
+        hasFrom: typeof directSupabase?.from === 'function',
+        initializationError: initializationError?.message || null
       })
+      
+      if (!directSupabase && initializationError) {
+        console.error("❌ Supabase 초기화 에러 상세:", {
+          message: initializationError.message,
+          stack: initializationError.stack,
+          name: initializationError.name
+        })
+      }
     } catch (supabaseCheckError: any) {
       console.warn("⚠️ Supabase 클라이언트 직접 확인 실패:", supabaseCheckError.message)
     }
@@ -188,16 +197,34 @@ export default async function handler(req, res) {
                            error?.code?.startsWith("42")
     
     if (isSupabaseError) {
+      // Supabase 초기화 에러 정보 가져오기
+      let initErrorInfo = null
+      try {
+        const { initializationError } = require("@/lib/supabase")
+        if (initializationError) {
+          initErrorInfo = {
+            message: initializationError.message,
+            name: initializationError.name
+          }
+        }
+      } catch (e) {
+        // 무시
+      }
+      
       errorResponse.debug.supabaseError = true
       errorResponse.debug.supabaseErrorCode = error?.code
       errorResponse.debug.supabaseErrorMessage = error?.message
       errorResponse.debug.supabaseErrorDetails = error?.details
       errorResponse.debug.supabaseErrorHint = error?.hint
       errorResponse.debug.supabaseStatus = supabaseStatus
+      errorResponse.debug.initializationError = initErrorInfo
       errorResponse.debug.suggestions = [
         "Vercel Dashboard → Settings → Environment Variables에서 환경 변수 확인",
         "NEXT_PUBLIC_SUPABASE_URL과 SUPABASE_SERVICE_ROLE_KEY가 올바르게 설정되었는지 확인",
         "환경 변수 이름이 정확한지 확인 (대소문자 구분)",
+        "환경 변수 값이 빈 문자열이 아닌지 확인",
+        "NEXT_PUBLIC_SUPABASE_URL이 https://로 시작하는지 확인",
+        "SUPABASE_SERVICE_ROLE_KEY가 충분히 긴지 확인 (최소 50자)",
         "/api/test-supabase로 연결 테스트",
         "Supabase Dashboard → Authentication → Policies에서 Service role full access 정책 확인",
         "Supabase Dashboard → Table Editor에서 citydirect_pages 테이블이 존재하는지 확인"

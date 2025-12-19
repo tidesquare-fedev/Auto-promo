@@ -39,17 +39,23 @@ if (useSupabase) {
         hasGetPage: typeof supabaseStore.getPage === 'function'
       })
     } else {
+      // 초기화 에러 정보 확인
+      const initError = supabaseStore?.initializationError
       console.error("❌ Supabase 클라이언트가 초기화되지 않음!")
       console.error("  - supabaseStore:", !!supabaseStore)
       console.error("  - supabaseStore.supabase:", !!supabaseStore?.supabase)
       console.error("  - supabaseStore 타입:", typeof supabaseStore)
       console.error("  - supabaseStore 키:", supabaseStore ? Object.keys(supabaseStore) : [])
+      console.error("  - 초기화 에러:", initError?.message || "없음")
       console.error("  - 환경 변수 확인:")
       console.error("    - NEXT_PUBLIC_SUPABASE_URL:", !!process.env.NEXT_PUBLIC_SUPABASE_URL)
       console.error("    - SUPABASE_SERVICE_ROLE_KEY:", !!process.env.SUPABASE_SERVICE_ROLE_KEY)
       console.error("  - 환경 변수 값 (일부):")
       console.error("    - URL prefix:", process.env.NEXT_PUBLIC_SUPABASE_URL?.substring(0, 30))
+      console.error("    - URL length:", process.env.NEXT_PUBLIC_SUPABASE_URL?.length)
       console.error("    - Key length:", process.env.SUPABASE_SERVICE_ROLE_KEY?.length)
+      console.error("    - URL starts with https://:", process.env.NEXT_PUBLIC_SUPABASE_URL?.startsWith("https://"))
+      console.error("    - Key is valid length:", (process.env.SUPABASE_SERVICE_ROLE_KEY?.length || 0) > 50)
       supabaseAvailable = false
     }
   } catch (e: any) {

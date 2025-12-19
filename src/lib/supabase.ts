@@ -4,21 +4,40 @@ import { CityDirectPage } from "@/types/page"
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ""
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || ""
 
+// 환경 변수 검증 (빈 문자열 체크 포함)
+const hasValidUrl = supabaseUrl && supabaseUrl.trim().length > 0
+const hasValidKey = supabaseKey && supabaseKey.trim().length > 0
+
 console.log("🔍 Supabase 환경 변수 확인:", {
-  hasUrl: !!supabaseUrl,
-  hasKey: !!supabaseKey,
+  hasUrl: hasValidUrl,
+  hasKey: hasValidKey,
   urlLength: supabaseUrl.length,
   keyLength: supabaseKey.length,
-  urlPrefix: supabaseUrl.substring(0, 20) + "...",
-  keyPrefix: supabaseKey.substring(0, 20) + "..."
+  urlPrefix: supabaseUrl.substring(0, 30) + "...",
+  keyPrefix: supabaseKey.substring(0, 20) + "...",
+  urlIsValid: hasValidUrl && supabaseUrl.startsWith("https://"),
+  keyIsValid: hasValidKey && supabaseKey.length > 50,
+  nodeEnv: process.env.NODE_ENV
 })
 
 // Supabase 클라이언트 초기화
 let supabase: any = null
+let initializationError: any = null
 
-if (supabaseUrl && supabaseKey) {
+if (hasValidUrl && hasValidKey) {
   try {
     console.log("🔧 Supabase 클라이언트 생성 시도...")
+    
+    // URL 형식 검증
+    if (!supabaseUrl.startsWith("https://")) {
+      throw new Error(`잘못된 Supabase URL 형식: ${supabaseUrl.substring(0, 50)}... (https://로 시작해야 함)`)
+    }
+    
+    // Key 길이 검증 (Service Role Key는 보통 100자 이상)
+    if (supabaseKey.length < 50) {
+      throw new Error(`Supabase Key가 너무 짧습니다: ${supabaseKey.length}자 (최소 50자 필요)`)
+    }
+    
     supabase = createClient(supabaseUrl, supabaseKey, {
       auth: {
         persistSession: false,
@@ -26,27 +45,55 @@ if (supabaseUrl && supabaseKey) {
       },
     })
     
+    // 클라이언트 생성 후 즉시 검증
+    if (!supabase) {
+      throw new Error("createClient가 null을 반환했습니다")
+    }
+    
+    if (typeof supabase.from !== 'function') {
+      throw new Error("Supabase 클라이언트가 올바르게 초기화되지 않았습니다 (from 메서드 없음)")
+    }
+    
     console.log("✅ Supabase 클라이언트 생성 완료:", {
       hasClient: !!supabase,
       clientType: typeof supabase,
-      hasFrom: typeof supabase?.from === 'function'
+      hasFrom: typeof supabase?.from === 'function',
+      urlValid: supabaseUrl.startsWith("https://"),
+      keyLength: supabaseKey.length
     })
   } catch (error: any) {
-    console.error("❌ Supabase 클라이언트 생성 실패:", error)
-    console.error("에러 상세:", error.message, error.stack)
+    initializationError = error
+    console.error("❌ Supabase 클라이언트 생성 실패:", error.message)
+    console.error("에러 상세:", {
+      message: error.message,
+      stack: error.stack,
+      name: error.name,
+      urlLength: supabaseUrl.length,
+      keyLength: supabaseKey.length,
+      urlPrefix: supabaseUrl.substring(0, 30),
+      keyPrefix: supabaseKey.substring(0, 20)
+    })
     supabase = null
   }
 } else {
-  console.warn("⚠️ Supabase 환경 변수가 설정되지 않았습니다")
-  if (!supabaseUrl) {
-    console.warn("  - NEXT_PUBLIC_SUPABASE_URL 없음")
+  const missingVars = []
+  if (!hasValidUrl) {
+    missingVars.push("NEXT_PUBLIC_SUPABASE_URL")
   }
-  if (!supabaseKey) {
-    console.warn("  - SUPABASE_SERVICE_ROLE_KEY 없음")
+  if (!hasValidKey) {
+    missingVars.push("SUPABASE_SERVICE_ROLE_KEY")
   }
+  console.warn("⚠️ Supabase 환경 변수가 설정되지 않았습니다:", {
+    missing: missingVars,
+    urlExists: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
+    keyExists: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
+    urlIsEmpty: supabaseUrl.length === 0,
+    keyIsEmpty: supabaseKey.length === 0
+  })
 }
 
-export { supabase }
+// 초기화 에러 정보도 export (디버깅용)
+export { supabase, initializationError }
 
 /**
  * Supabase PostgreSQL을 사용한 영구 저장소
@@ -58,8 +105,16 @@ export { supabase }
 
 export async function savePage(page: CityDirectPage): Promise<void> {
   if (!supabase) {
-    console.error("❌ Supabase 클라이언트가 초기화되지 않았습니다")
-    throw new Error("Supabase 클라이언트가 초기화되지 않았습니다")
+    const errorDetails = {
+      hasUrl: hasValidUrl,
+      hasKey: hasValidKey,
+      urlLength: supabaseUrl.length,
+      keyLength: supabaseKey.length,
+      initializationError: initializationError?.message || null,
+      nodeEnv: process.env.NODE_ENV
+    }
+    console.error("❌ Supabase 클라이언트가 초기화되지 않았습니다:", errorDetails)
+    throw new Error(`Supabase 클라이언트가 초기화되지 않았습니다. 상세: ${JSON.stringify(errorDetails)}`)
   }
 
   const now = new Date().toISOString()
@@ -148,8 +203,16 @@ export async function savePage(page: CityDirectPage): Promise<void> {
 
 export async function getPage(slug: string): Promise<CityDirectPage | null> {
   if (!supabase) {
-    console.error("❌ Supabase 클라이언트가 초기화되지 않았습니다")
-    throw new Error("Supabase 클라이언트가 초기화되지 않았습니다")
+    const errorDetails = {
+      hasUrl: hasValidUrl,
+      hasKey: hasValidKey,
+      urlLength: supabaseUrl.length,
+      keyLength: supabaseKey.length,
+      initializationError: initializationError?.message || null,
+      nodeEnv: process.env.NODE_ENV
+    }
+    console.error("❌ Supabase 클라이언트가 초기화되지 않았습니다:", errorDetails)
+    throw new Error(`Supabase 클라이언트가 초기화되지 않았습니다. 상세: ${JSON.stringify(errorDetails)}`)
   }
 
   console.log("🔍 Supabase getPage 호출:", {
@@ -210,8 +273,16 @@ export async function getPage(slug: string): Promise<CityDirectPage | null> {
 
 export async function getPages(): Promise<CityDirectPage[]> {
   if (!supabase) {
-    console.error("❌ Supabase 클라이언트가 초기화되지 않았습니다")
-    throw new Error("Supabase 클라이언트가 초기화되지 않았습니다")
+    const errorDetails = {
+      hasUrl: hasValidUrl,
+      hasKey: hasValidKey,
+      urlLength: supabaseUrl.length,
+      keyLength: supabaseKey.length,
+      initializationError: initializationError?.message || null,
+      nodeEnv: process.env.NODE_ENV
+    }
+    console.error("❌ Supabase 클라이언트가 초기화되지 않았습니다:", errorDetails)
+    throw new Error(`Supabase 클라이언트가 초기화되지 않았습니다. 상세: ${JSON.stringify(errorDetails)}`)
   }
 
   console.log("📋 Supabase 목록 조회 시도...")
@@ -250,7 +321,15 @@ export async function getPages(): Promise<CityDirectPage[]> {
 
 export async function deletePage(slug: string): Promise<void> {
   if (!supabase) {
-    throw new Error("Supabase 클라이언트가 초기화되지 않았습니다")
+    const errorDetails = {
+      hasUrl: hasValidUrl,
+      hasKey: hasValidKey,
+      urlLength: supabaseUrl.length,
+      keyLength: supabaseKey.length,
+      initializationError: initializationError?.message || null,
+      nodeEnv: process.env.NODE_ENV
+    }
+    throw new Error(`Supabase 클라이언트가 초기화되지 않았습니다. 상세: ${JSON.stringify(errorDetails)}`)
   }
 
   const { error } = await supabase

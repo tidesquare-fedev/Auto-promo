@@ -3,7 +3,7 @@
  * http://localhost:3000/api/test-supabase
  */
 
-import { supabase } from "@/lib/supabase"
+import { supabase, initializationError } from "@/lib/supabase"
 
 export default async function handler(req, res) {
   if (req.method !== "GET") {
@@ -19,13 +19,20 @@ export default async function handler(req, res) {
       hasKey: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
       url: process.env.NEXT_PUBLIC_SUPABASE_URL ? 
         process.env.NEXT_PUBLIC_SUPABASE_URL.substring(0, 30) + "..." : null,
-      keyLength: process.env.SUPABASE_SERVICE_ROLE_KEY?.length || 0
+      keyLength: process.env.SUPABASE_SERVICE_ROLE_KEY?.length || 0,
+      urlIsValid: process.env.NEXT_PUBLIC_SUPABASE_URL?.startsWith("https://") || false,
+      keyIsValid: (process.env.SUPABASE_SERVICE_ROLE_KEY?.length || 0) > 50,
+      nodeEnv: process.env.NODE_ENV
     }
 
     // Supabase 클라이언트 확인
     const clientCheck = {
       hasClient: !!supabase,
-      clientType: typeof supabase
+      clientType: typeof supabase,
+      initializationError: initializationError ? {
+        message: initializationError.message,
+        name: initializationError.name
+      } : null
     }
 
     // 테이블 존재 확인

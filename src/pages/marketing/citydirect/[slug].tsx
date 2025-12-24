@@ -40,13 +40,15 @@ export default function CityDirectMarketingPage({ page }: PageProps) {
         {page.seo.ogImage && <meta property="og:image" content={page.seo.ogImage} />}
       </Head>
 
-      <main className="min-h-screen bg-white pb-24 pt-24 md:pt-28">
+      <main className={`min-h-screen bg-white pb-24 ${page.content[0]?.type === "Hero" ? "" : "pt-24 md:pt-28"}`}>
         {/* 섹션 렌더링 */}
         {page.content.map((section, idx) => {
           const key = `${section.type}-${idx}`
 
           switch (section.type) {
             case "Hero":
+              // 히어로 섹션은 첫 번째 섹션일 때만 렌더링
+              if (idx !== 0) return null
               return (
                 <HeroSection
                   key={key}

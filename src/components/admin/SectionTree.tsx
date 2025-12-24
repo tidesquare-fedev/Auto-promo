@@ -47,6 +47,13 @@ export function SectionTree({
       const newIndex = sections.findIndex((_, idx) => idx === over.id)
 
       if (oldIndex !== -1 && newIndex !== -1) {
+        const draggedSection = sections[oldIndex]
+        
+        // 히어로 섹션이 첫 번째에 있고 다른 위치로 이동하려고 하면 막기
+        if (draggedSection.type === "Hero" && oldIndex === 0 && newIndex !== 0) {
+          return // 이동 불가
+        }
+        
         const newSections = arrayMove(sections, oldIndex, newIndex)
         onReorder(newSections)
       }
@@ -179,6 +186,9 @@ function SortableTreeItem({
   getColor,
   getTitle
 }: SortableTreeItemProps) {
+  // 히어로 섹션이 첫 번째에 있으면 드래그 비활성화
+  const isHeroLocked = section.type === "Hero" && index === 0
+  
   const {
     attributes,
     listeners,
@@ -186,7 +196,10 @@ function SortableTreeItem({
     transform,
     transition,
     isDragging
-  } = useSortable({ id })
+  } = useSortable({ 
+    id,
+    disabled: isHeroLocked
+  })
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -210,9 +223,12 @@ function SortableTreeItem({
     >
       {/* 드래그 핸들 */}
       <div
-        className="cursor-grab active:cursor-grabbing text-gray-400 hover:text-gray-600"
-        {...attributes}
-        {...listeners}
+        className={isHeroLocked 
+          ? "text-gray-300 cursor-not-allowed" 
+          : "cursor-grab active:cursor-grabbing text-gray-400 hover:text-gray-600"
+        }
+        {...(isHeroLocked ? {} : { ...attributes, ...listeners })}
+        title={isHeroLocked ? "히어로 섹션은 첫 번째 위치에 고정됩니다" : ""}
       >
         ⋮⋮
       </div>

@@ -2,8 +2,8 @@
 export const designRules = {
   Hero: {
     max: 1,
-    required: ["title"],
-    optional: ["subtitle", "image"]
+    required: [],
+    optional: ["title", "subtitle", "image"]
   },
   ProductGrid: {
     max: 2,

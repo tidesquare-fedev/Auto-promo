@@ -4,12 +4,18 @@ import { PageSection } from "@/types/page"
 export function validateDesign(sections: PageSection[]) {
   const count: Record<string, number> = {}
 
-  for (const s of sections) {
+  for (let i = 0; i < sections.length; i++) {
+    const s = sections[i]
     count[s.type] = (count[s.type] || 0) + 1
 
     const rule = designRules[s.type]
     if (!rule) {
       throw new Error(`알 수 없는 섹션 타입: ${s.type}`)
+    }
+
+    // Hero 섹션은 첫 번째 위치에만 허용
+    if (s.type === "Hero" && i !== 0) {
+      throw new Error("Hero 섹션은 첫 번째 위치에만 배치할 수 있습니다")
     }
 
     // ProductGrid 검증
@@ -99,9 +105,7 @@ export function validateDesign(sections: PageSection[]) {
     }
 
     // 필수 필드 검증
-    if (s.type === "Hero" && !s.title) {
-      throw new Error("Hero 섹션의 제목은 필수입니다")
-    }
+    // Hero 섹션의 제목과 부제목은 선택 사항
     if (s.type === "IntroText" && (!s.title || !s.description)) {
       throw new Error("IntroText 섹션의 제목과 설명은 필수입니다")
     }

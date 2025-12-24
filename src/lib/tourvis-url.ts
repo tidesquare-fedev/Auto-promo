@@ -8,20 +8,15 @@
  * - production: tourvis.com (운영)
  * 
  * 환경 변수 우선순위:
- * 1. NEXT_PUBLIC_TOURVIS_ENV (명시적 설정)
+ * 1. NEXT_PUBLIC_APP_ENV (명시적 설정: development/production)
  * 2. NODE_ENV (기본값)
  */
 export function getTourvisDomain(): string {
-  // 명시적으로 설정된 환경 변수 우선 사용
-  const tourvisEnv = process.env.NEXT_PUBLIC_TOURVIS_ENV
-  
-  // 명시적 설정이 없으면 NODE_ENV 사용
-  const env = tourvisEnv || process.env.NODE_ENV || 'development'
-  
-  // production이면 운영, 그 외는 개발
-  return env === 'production'
-    ? 'https://tourvis.com' 
-    : 'https://d.tourvis.com'
+  const appEnv = process.env.NEXT_PUBLIC_APP_ENV
+  const env = appEnv || process.env.NODE_ENV || "development"
+  return env === "production"
+    ? "https://tourvis.com"
+    : "https://d.tourvis.com"
 }
 
 /**
@@ -38,8 +33,8 @@ export function getProductUrl(productId: string): string {
  */
 export function getEnvironmentInfo() {
   return {
-    tourvisEnv: process.env.NEXT_PUBLIC_TOURVIS_ENV || 'not set',
-    nodeEnv: process.env.NODE_ENV || 'not set',
-    domain: getTourvisDomain()
+    appEnv: process.env.NEXT_PUBLIC_APP_ENV || "not set",
+    nodeEnv: process.env.NODE_ENV || "not set",
+    domain: getTourvisDomain(),
   }
 }

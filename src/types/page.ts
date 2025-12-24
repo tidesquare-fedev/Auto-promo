@@ -56,6 +56,8 @@ export type ProductGridSection = {
   // 구버전 호환 (단일 뱃지)
   badge?: ProductBadge
   badgeTargets?: string[]
+  // 리뷰 노출 여부
+  showReview?: boolean  // 기본값: true
 }
 
 export type ProductTabsSection = {

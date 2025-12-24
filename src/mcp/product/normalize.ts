@@ -16,6 +16,33 @@ export function normalizeProduct(p: TuttiProduct): NormalizedProduct {
   // OG 이미지 추출
   const ogImage = p.primary_image?.og || p.display_images?.[0]?.og
   
+  // 모든 이미지 배열 추출 (스와이프용)
+  const images: string[] = []
+  
+  // display_images 배열에서 origin 추출
+  if (p.display_images && Array.isArray(p.display_images)) {
+    p.display_images.forEach(img => {
+      if (img.origin) {
+        images.push(img.origin)
+      }
+    })
+  }
+  
+  // primary_image가 있으면 맨 앞에 추가 (없으면)
+  if (p.primary_image?.origin && !images.includes(p.primary_image.origin)) {
+    images.unshift(p.primary_image.origin)
+  }
+  
+  // 기존 images 배열이 있고 display_images가 없으면 사용
+  if (images.length === 0 && p.images && Array.isArray(p.images)) {
+    images.push(...p.images)
+  }
+  
+  // 최종적으로 thumbnail이 있고 images에 없으면 추가
+  if (thumbnail && !images.includes(thumbnail)) {
+    images.unshift(thumbnail)
+  }
+  
   // 재고 여부 (sold_out이 false면 재고 있음)
   const soldOut = p.sold_out === true
   
@@ -53,6 +80,7 @@ export function normalizeProduct(p: TuttiProduct): NormalizedProduct {
     currency: p.price?.currency || "원",
     thumbnail: thumbnail,
     ogImage: ogImage,
+    images: images.length > 0 ? images : (thumbnail ? [thumbnail] : undefined),
     soldOut: soldOut,
     description: p.description,
     region: region,

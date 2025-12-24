@@ -84,6 +84,7 @@ export interface NormalizedProduct {
   currency?: string
   thumbnail?: string
   ogImage?: string
+  images?: string[] // 모든 이미지 배열 (스와이프용)
   soldOut: boolean
   description?: string
   // 추가 필드

@@ -1,7 +1,22 @@
 import { TuttiProduct } from "@/types/tutti-api"
+import { universalEnv } from "../../../env/universal"
 
-const TNA_API_BASE = process.env.TNA_API_BASE || "https://dev-apollo-api.tidesquare.com/tna-api-v2"
-const TNA_API_KEY = process.env.TNA_API_KEY || ""
+// universalEnv에서 API 설정 가져오기
+const TNA_API_BASE = universalEnv.apiBaseUrl.tna
+const TNA_API_AUTH = universalEnv.apiAuth.tna || ""
+
+// 디버깅: 환경 변수 확인
+console.log("🔧 adapter.ts 초기화:", {
+  tnaApiBase: TNA_API_BASE,
+  hasTnaAuth: !!TNA_API_AUTH,
+  tnaAuthPrefix: TNA_API_AUTH ? TNA_API_AUTH.substring(0, 20) + "..." : "없음",
+  envTourvisApiKey: process.env.TOURVIS_API_KEY ? "설정됨" : "미설정",
+  envTourvisApiKeyLength: process.env.TOURVIS_API_KEY?.length || 0,
+  envTnaApiAuth: process.env.TNA_API_AUTH ? "설정됨" : "미설정",
+  nodeEnv: process.env.NODE_ENV,
+  appEnv: process.env.NEXT_PUBLIC_APP_ENV,
+  brand: process.env.NEXT_PUBLIC_APP_BRAND
+})
 
 export type CitySearchResult = {
   id: string
@@ -22,19 +37,28 @@ export async function searchCities(keyword: string): Promise<CitySearchResult[]>
       url,
       keyword,
       base: TNA_API_BASE,
-      hasKey: !!TNA_API_KEY
+      hasAuth: !!TNA_API_AUTH,
+      authHeader: TNA_API_AUTH ? TNA_API_AUTH.substring(0, 30) + "..." : "없음"
     })
     
     const res = await fetch(url, {
       method: "GET",
       headers: {
-        Authorization: `Bearer ${TNA_API_KEY}`,
+        ...(TNA_API_AUTH ? { Authorization: TNA_API_AUTH } : {}),
         "Content-Type": "application/json"
       }
     })
 
     if (!res.ok) {
-      console.error(`도시 검색 API 오류: ${res.status} ${res.statusText}`)
+      const errorText = await res.text().catch(() => "응답 본문 읽기 실패")
+      console.error(`도시 검색 API 오류: ${res.status} ${res.statusText}`, {
+        url,
+        status: res.status,
+        statusText: res.statusText,
+        errorResponse: errorText.substring(0, 200),
+        hasAuth: !!TNA_API_AUTH,
+        authPrefix: TNA_API_AUTH ? TNA_API_AUTH.substring(0, 20) : "없음"
+      })
       return []
     }
 
@@ -80,7 +104,7 @@ export async function fetchProducts(productIds: string[]): Promise<TuttiProduct[
     const res = await fetch(url, {
       method: "GET",
       headers: {
-        Authorization: `Bearer ${TNA_API_KEY}`,
+        ...(TNA_API_AUTH ? { Authorization: TNA_API_AUTH } : {}),
         "Content-Type": "application/json"
       }
     })

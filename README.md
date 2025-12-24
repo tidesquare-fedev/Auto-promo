@@ -2,15 +2,16 @@
 
 MCP(Model Context Protocol) 기반 CityDirect 프로모션 페이지 제작 어드민 시스템입니다.
 
-투티 API와 디자인 시스템을 MCP로 래핑하여 프로모션 페이지를 빠르고 쉽게 제작할 수 있습니다.
+Apollo API와 디자인 시스템을 MCP로 래핑하여 프로모션 페이지를 빠르고 쉽게 제작할 수 있습니다.
 
 ## 주요 기능
 
 ### 페이지 빌더
-- **실시간 상품 미리보기**: 상품 ID 입력 시 투티 API를 통해 실시간으로 상품 정보 표시
+- **실시간 상품 미리보기**: 상품 ID 입력 시 Apollo API를 통해 실시간으로 상품 정보 표시
 - **Drag & Drop 섹션 관리**: 섹션을 드래그하여 자유롭게 배치 및 순서 변경
 - **디자인 시스템 검증**: Design MCP가 페이지 구조를 자동 검증하여 오류 방지
 - **Draft·Publish 권한 분리**: 발행된 페이지는 초안으로 변경 후 수정 가능
+- **리뷰 통합**: 상품별 리뷰 자동 표시 및 키워드 태그 지원
 
 ### 배지 시스템
 - **다중 배지 지원**: 한 상품에 여러 개의 배지 표시 가능
@@ -31,12 +32,12 @@ MCP(Model Context Protocol) 기반 CityDirect 프로모션 페이지 제작 어�
 
 ## 기술 스택
 
-- **Framework**: Next.js 14 (Pages Router)
+- **Framework**: Next.js 16.1 (Pages Router)
 - **Language**: TypeScript
 - **UI Library**: shadcn/ui (Radix UI + Tailwind CSS)
 - **Drag & Drop**: @dnd-kit
 - **Database**: Supabase
-- **External API**: 투티 API (Tidesquare)
+- **External API**: Apollo API (TNA), Tourvis Review API
 - **Architecture**: MCP (Model Context Protocol)
 
 ## 프로젝트 구조
@@ -63,14 +64,18 @@ src/
 ├─ mcp/
 │  ├─ product/                       # Product MCP
 │  │  ├─ index.ts                    # 메인 인터페이스
-│  │  ├─ adapter.ts                  # 투티 API 어댑터
+│  │  ├─ adapter.ts                  # Apollo API 어댑터
 │  │  ├─ normalize.ts                # 데이터 정규화
 │  │  ├─ cache.ts                    # 캐싱 레이어
 │  │  └─ test-api.ts                 # API 테스트
-│  └─ design/                        # Design MCP
+│  ├─ design/                        # Design MCP
+│  │  ├─ index.ts                    # 메인 인터페이스
+│  │  ├─ rules.ts                    # 디자인 규칙
+│  │  ├─ validate.ts                 # 검증 로직
+│  │  └─ styles.ts                   # 스타일 유틸리티
+│  └─ common/                        # Common MCP
 │     ├─ index.ts                    # 메인 인터페이스
-│     ├─ rules.ts                    # 디자인 규칙
-│     └─ validate.ts                 # 검증 로직
+│     └─ review.ts                   # 리뷰 API
 │
 ├─ components/
 │  ├─ admin/                         # 어드민 전용 컴포넌트
@@ -104,17 +109,22 @@ src/
 │  │  └─ products.ts                 # 상품 API 유틸리티
 │  ├─ utils.ts                       # 공통 유틸리티 (cn)
 │  ├─ db.ts                          # 데이터베이스 추상화
-│  └─ supabase.ts                    # Supabase 클라이언트
+│  ├─ supabase.ts                    # Supabase 클라이언트
+│  └─ tourvis-url.ts                 # Tourvis URL 유틸리티
 │
 ├─ hooks/
 │  └─ useProducts.ts                 # 상품 조회 커스텀 훅
 │
 ├─ types/
 │  ├─ page.ts                        # Page DSL 타입 정의
-│  └─ tutti-api.ts                   # 투티 API 타입
+│  ├─ tutti-api.ts                   # Apollo API 타입
+│  └─ review.ts                     # 리뷰 타입
 │
-└─ styles/
-   └─ globals.css                    # 글로벌 스타일
+├─ styles/
+│  └─ globals.css                    # 글로벌 스타일
+│
+└─ env/
+   └─ universal.ts                   # 환경별 설정 중앙 관리
 ```
 
 ## 설치 및 실행
@@ -129,21 +139,20 @@ yarn install
 
 ### 2. 환경 변수 설정
 
-`.env.local` 파일을 생성하고 다음 환경 변수를 설정하세요:
+환경 변수는 `package.json`의 `dev` 스크립트에서 `cross-env`로 설정되거나, Vercel 대시보드에서 설정합니다.
 
-```env
-# TNA API 설정
-TNA_API_KEY=your_actual_api_key_here
-TNA_API_BASE=https://dev-apollo-api.tidesquare.com/tna-api-v2
+**로컬 개발:**
+- `package.json`의 `dev` 스크립트에 환경 변수가 포함되어 있습니다
+- 필요시 Vercel에서 환경 변수를 가져와 사용할 수 있습니다
 
-# Supabase 설정
-NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
-SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
-
-# 환경 설정
-NODE_ENV=development
-```
+**Vercel 배포:**
+- `NEXT_PUBLIC_APP_ENV`: `production` 또는 `development`
+- `NEXT_PUBLIC_APP_BRAND`: `tourvis` (기본값)
+- `NEXT_PUBLIC_SUPABASE_URL`: Supabase URL
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`: Supabase Anon Key
+- `SUPABASE_SERVICE_ROLE_KEY`: Supabase Service Role Key
+- `TOURVIS_API_KEY`: Tourvis API 키 (선택)
+- `TNA_API_BASE`: Apollo API Base URL (선택, 기본값 사용 가능)
 
 ### 3. 개발 서버 실행
 
@@ -152,15 +161,6 @@ npm run dev
 ```
 
 브라우저에서 [http://localhost:3000/admin/citydirect](http://localhost:3000/admin/citydirect) 접속
-
-### 4. API 연결 테스트
-
-```bash
-# 브라우저에서 접속
-http://localhost:3000/api/test-tna
-```
-
-성공 시 사용 가능한 엔드포인트와 샘플 응답을 확인할 수 있습니다.
 
 ## 사용 방법
 
@@ -192,6 +192,7 @@ http://localhost:3000/api/test-tna
 - 상품을 그리드 형태로 진열
 - **컬럼 수**: 1~4개 선택 (카드 크기 자동 조절)
 - **상품 ID**: 쉼표 또는 줄바꿈으로 구분하여 입력
+- **리뷰 표시**: 상품별 리뷰 자동 표시 (선택 가능)
 - **배지 설정**: 
   - "뱃지 추가" 버튼으로 여러 배지 생성
   - 텍스트, 색상, 테두리 커스터마이징
@@ -311,14 +312,19 @@ http://localhost:3000/api/test-tna
 ```
 
 ### Product MCP
-- **역할**: 투티 API와의 인터페이스
+- **역할**: Apollo API (TNA)와의 인터페이스
 - **기능**: 상품 조회, 데이터 정규화, 캐싱
 - **파일**: `src/mcp/product/`
 
 ### Design MCP
 - **역할**: 페이지 디자인 검증 및 규칙 관리
-- **기능**: 섹션 개수 제한, 필수 필드 검증, 템플릿 생성
+- **기능**: 섹션 개수 제한, 필수 필드 검증, 스타일 유틸리티
 - **파일**: `src/mcp/design/`
+
+### Common MCP
+- **역할**: 공통 API 모듈
+- **기능**: 리뷰 조회, 공통 유틸리티
+- **파일**: `src/mcp/common/`
 
 ## API 엔드포인트
 
@@ -480,7 +486,7 @@ npm i -g vercel
 vercel
 ```
 
-환경 변수는 Vercel 대시보드에서 설정하세요.
+환경 변수는 Vercel 대시보드에서 설정하세요. `env/universal.ts`에서 환경별 설정을 중앙 관리합니다.
 
 ## 개발 가이드
 
@@ -567,68 +573,6 @@ case "NewSection":
 - 검증 로직을 비즈니스 규칙으로 분리
 - 확장 가능한 구조 유지
 
-## 문제 해결
-
-### 상품이 조회되지 않음
-
-**증상**: ProductGrid/ProductTabs에서 상품이 표시되지 않음
-
-**해결**:
-1. 브라우저 콘솔에서 API 오류 확인
-2. `/api/test-tna` 접속하여 API 연결 확인
-3. `.env.local`에서 `TNA_API_KEY` 확인
-4. 상품 ID가 올바른지 확인
-
-### 배지가 표시되지 않음
-
-**원인**: 배지 텍스트가 비어있거나 타게팅 설정 오류
-
-**해결**:
-1. 배지 텍스트가 입력되어 있는지 확인
-2. 적용 상품 ID가 정확한지 확인
-3. 브라우저에서 배지 스타일이 올바르게 렌더링되는지 확인
-
-### 발행된 페이지 수정 불가
-
-**증상**: "저장" 버튼이 비활성화됨
-
-**해결**:
-1. 페이지 상단에 "발행된 페이지입니다" 경고 확인
-2. 상태를 `DRAFT`로 변경
-3. 수정 후 다시 `PUBLISHED`로 변경
-
-### TypeScript 오류
-
-**해결**:
-```bash
-# TypeScript 캐시 삭제
-rm -rf .next
-npm run dev
-```
-
-### Supabase 연결 오류
-
-**해결**:
-1. `SUPABASE_SETUP.md` 문서 참조
-2. 환경 변수가 올바르게 설정되어 있는지 확인
-3. Supabase 프로젝트가 활성화되어 있는지 확인
-
-## 참고 자료
-
-### 외부 문서
-- [투티 API 문서](https://dev-apollo-api.tidesquare.com/tna-api-v2/swagger-ui/)
-- [Next.js 문서](https://nextjs.org/docs)
-- [shadcn/ui 문서](https://ui.shadcn.com/docs)
-- [@dnd-kit 문서](https://docs.dndkit.com/)
-- [Supabase 문서](https://supabase.com/docs)
-
-### 프로젝트 내 문서
-- `TNA_API_GUIDE.md`: 투티 API 사용 가이드
-- `TNA_API_UPDATE.md`: API 업데이트 내역
-- `SUPABASE_SETUP.md`: Supabase 초기 설정
-- `VERCEL_DEPLOY.md`: Vercel 배포 가이드
-- `MAC_SETUP.md`: Mac 환경 설정
-
 ## 라이선스
 
-Private Project
+Rebecca Project

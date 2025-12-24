@@ -40,7 +40,7 @@ export default function CityDirectMarketingPage({ page }: PageProps) {
         {page.seo.ogImage && <meta property="og:image" content={page.seo.ogImage} />}
       </Head>
 
-      <main className="min-h-screen bg-white pb-24">
+      <main className="min-h-screen bg-white pb-24 pt-24 md:pt-28">
         {/* 섹션 렌더링 */}
         {page.content.map((section, idx) => {
           const key = `${section.type}-${idx}`

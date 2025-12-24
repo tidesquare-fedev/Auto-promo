@@ -5,6 +5,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { Checkbox } from "@/components/ui/checkbox"
 import { ProductPreview } from "@/components/admin/ProductPreview"
 import { InlineStyleControl } from "@/components/admin/InlineStyleControl"
 import { BackgroundColorControl } from "@/components/admin/BackgroundColorControl"
@@ -423,6 +424,21 @@ export function SectionEditorContent({
             <p className="text-xs text-muted-foreground">
               💡 카드 개수에 따라 표시되는 정보량이 달라집니다
             </p>
+          </div>
+
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id={`productgrid-${index}-showReview`}
+              checked={section.showReview !== false}
+              onChange={(e) => update({ showReview: e.target.checked })}
+              disabled={readOnly}
+            />
+            <Label 
+              htmlFor={`productgrid-${index}-showReview`}
+              className="text-sm font-normal cursor-pointer"
+            >
+              리뷰 노출 (평점 5.0 이상 리뷰 1개 표시)
+            </Label>
           </div>
 
           <div className="space-y-2">

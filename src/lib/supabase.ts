@@ -1,8 +1,9 @@
 import { createClient } from "@supabase/supabase-js"
 import { CityDirectPage } from "@/types/page"
+import { envConfig } from "../../env/universal"
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ""
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || ""
+const supabaseUrl = envConfig.supabaseUrl || ""
+const supabaseKey = envConfig.supabaseServiceRoleKey || ""
 
 // 환경 변수 검증 (빈 문자열 체크 포함)
 const hasValidUrl = supabaseUrl && supabaseUrl.trim().length > 0

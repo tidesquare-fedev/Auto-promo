@@ -1,7 +1,9 @@
 import { createClient } from "@supabase/supabase-js"
 import { CityDirectPage } from "@/types/page"
-import { envConfig } from "../../env/universal"
+import { getEnvConfig } from "../../env/universal"
 
+// 런타임에 환경 변수 읽기 (Vercel 배포 시 정상 동작)
+const envConfig = getEnvConfig()
 const supabaseUrl = envConfig.supabaseUrl || ""
 const supabaseKey = envConfig.supabaseServiceRoleKey || ""
 
@@ -84,12 +86,17 @@ if (hasValidUrl && hasValidKey) {
   if (!hasValidKey) {
     missingVars.push("SUPABASE_SERVICE_ROLE_KEY")
   }
+  // 런타임에 다시 확인 (디버깅용)
+  const runtimeConfig = getEnvConfig()
   console.warn("⚠️ Supabase 환경 변수가 설정되지 않았습니다:", {
     missing: missingVars,
-    urlExists: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
-    keyExists: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
+    urlExists: !!runtimeConfig.supabaseUrl,
+    keyExists: !!runtimeConfig.supabaseServiceRoleKey,
     urlIsEmpty: supabaseUrl.length === 0,
-    keyIsEmpty: supabaseKey.length === 0
+    keyIsEmpty: supabaseKey.length === 0,
+    // 직접 환경 변수 확인
+    directEnvUrl: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
+    directEnvKey: !!process.env.SUPABASE_SERVICE_ROLE_KEY
   })
 }
 

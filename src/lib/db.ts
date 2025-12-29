@@ -1,11 +1,14 @@
 import { CityDirectPage } from "@/types/page"
 import * as supabaseModule from "./supabase"
-import { envConfig } from "../../env/universal"
+import { getEnvConfig } from "../../env/universal"
 
 /**
  * 데이터베이스 추상화 레이어
  * 환경에 따라 Supabase 또는 메모리 저장소 사용
  */
+
+// 런타임에 환경 변수 읽기 (Vercel 배포 시 정상 동작)
+const envConfig = getEnvConfig()
 
 // Supabase 사용 여부 확인
 const useSupabase = !!(
